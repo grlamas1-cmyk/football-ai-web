@@ -7,48 +7,60 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
+/* GLOBAL */
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
   background: #0f172a;
-  color: white;
+  color: #e2e8f0;
   display: flex;
 }
 
 /* SIDEBAR */
 .sidebar {
-  width: 220px;
+  width: 240px;
   background: #020617;
   height: 100vh;
-  padding: 20px;
+  padding: 25px;
+  border-right: 1px solid #1e293b;
 }
 
 .sidebar h2 {
-  font-size: 16px;
-  margin-bottom: 30px;
+  font-size: 18px;
+  margin-bottom: 35px;
+  color: #fff;
 }
 
 .menu-item {
-  margin: 15px 0;
+  margin: 18px 0;
   cursor: pointer;
   color: #94a3b8;
+  font-size: 15px;
+  transition: 0.2s;
 }
 
 .menu-item:hover {
-  color: white;
+  color: #fff;
+  transform: translateX(4px);
 }
 
 /* MAIN */
 .main {
   flex: 1;
-  padding: 20px 40px;
+  padding: 30px 50px;
 }
 
 /* TOPBAR */
 .topbar {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30px;
+  align-items: center;
+  margin-bottom: 35px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 28px;
 }
 
 .card {
@@ -56,6 +68,7 @@ body {
   padding: 20px;
   border-radius: 12px;
   margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
 
 /* GRID */
@@ -67,31 +80,49 @@ body {
 
 .small-card {
   background: #1e293b;
-  padding: 15px;
+  padding: 18px;
   border-radius: 10px;
   width: 180px;
+  text-align: center;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
 
-/* INPUT */
+/* INPUTS */
 input {
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
   border: none;
   margin: 5px;
+  width: 200px;
+  background: #334155;
+  color: #fff;
+}
+
+input::placeholder {
+  color: #94a3b8;
 }
 
 button {
-  padding: 10px 15px;
+  padding: 12px 18px;
   border: none;
   background: #3b82f6;
   border-radius: 8px;
   cursor: pointer;
   color: white;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: #2563eb;
 }
 
 .result {
   margin-top: 15px;
   color: #38bdf8;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 /* SECTIONS */
@@ -121,7 +152,7 @@ button {
 <div class="main">
 
 <div class="topbar">
-  <h1>Dashboard</h1>
+  <h1 id="title">Dashboard</h1>
   <div>👤 Usuario</div>
 </div>
 
@@ -205,24 +236,30 @@ button {
 function show(sec) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(sec).classList.add('active');
+
+  // Cambiar título dinámicamente
+  const titles = {
+    dashboard: "Dashboard",
+    pred: "Predicciones",
+    odds: "Cuotas",
+    stats: "Estadísticas"
+  };
+  document.getElementById("title").innerText = titles[sec];
 }
 
 function predict() {
-  let t1 = document.getElementById("t1").value;
-  let t2 = document.getElementById("t2").value;
+  const t1 = document.getElementById("t1").value.trim();
+  const t2 = document.getElementById("t2").value.trim();
 
   if (!t1 || !t2) {
     document.getElementById("res").innerText = "Introduce equipos";
     return;
   }
 
-  let p = Math.random();
-
-  let result = "";
-
-  if (p > 0.6) result = `${t1} favorito`;
-  else if (p < 0.4) result = `${t2} favorito`;
-  else result = "Partido equilibrado";
+  const p = Math.random();
+  let result = p > 0.6 ? `${t1} favorito`
+             : p < 0.4 ? `${t2} favorito`
+             : "Partido equilibrado";
 
   document.getElementById("res").innerText = result;
 }
