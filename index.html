@@ -84,7 +84,14 @@
 <section class="hero">
   <h1>Predicciones inteligentes de fútbol</h1>
   <p>Analiza partidos, compara cuotas y mejora tus apuestas</p>
-  <div class="button">Probar predicción</div>
+  <div>
+  <input id="team1" placeholder="Equipo local">
+  <input id="team2" placeholder="Equipo visitante">
+  <br><br>
+  <button class="button" onclick="predict()">Predecir</button>
+</div>
+
+<p id="result"></p>
 </section>
 
 <section class="section">
@@ -107,6 +114,31 @@
     </div>
   </div>
 </section>
+<script>
+function predict() {
+  const team1 = document.getElementById("team1").value;
+  const team2 = document.getElementById("team2").value;
 
+  if (!team1 || !team2) {
+    document.getElementById("result").innerText = "Introduce ambos equipos";
+    return;
+  }
+
+  // Simulación simple
+  const prob = Math.floor(Math.random() * 100);
+
+  let prediction = "";
+
+  if (prob > 60) {
+    prediction = team1 + " gana (" + prob + "%)";
+  } else if (prob < 40) {
+    prediction = team2 + " gana (" + (100 - prob) + "%)";
+  } else {
+    prediction = "Empate probable";
+  }
+
+  document.getElementById("result").innerText = "Predicción: " + prediction;
+}
+</script>
 </body>
 </html>
