@@ -4,44 +4,45 @@
 <meta charset="UTF-8">
 <title>Football Analytics Pro</title>
 
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
 <style>
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0b0f1a;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #0f172a, #020617);
   color: white;
 }
 
+/* NAVBAR */
 header {
-  background: #111827;
-  padding: 20px;
-  text-align: center;
-  font-size: 22px;
-  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 40px;
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(10px);
 }
 
-nav {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  background: #1f2937;
-  padding: 12px;
+.logo {
+  font-weight: 600;
+  font-size: 18px;
 }
 
 nav a {
+  margin-left: 20px;
   cursor: pointer;
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
+  color: #94a3b8;
 }
 
 nav a:hover {
-  color: #38bdf8;
+  color: white;
 }
 
+/* SECTIONS */
 .section {
   display: none;
-  padding: 40px;
+  padding: 60px 20px;
   text-align: center;
 }
 
@@ -49,27 +50,44 @@ nav a:hover {
   display: block;
 }
 
-.hero {
-  padding: 60px 20px;
+/* HERO */
+.hero h1 {
+  font-size: 40px;
+  margin-bottom: 10px;
 }
 
+.hero p {
+  color: #94a3b8;
+}
+
+/* BUTTON */
 .button {
-  background: #2563eb;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  padding: 14px 26px;
+  border-radius: 12px;
+  margin-top: 20px;
   display: inline-block;
-  margin-top: 15px;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
+.button:hover {
+  transform: scale(1.05);
+}
+
+/* INPUTS */
 input {
-  padding: 10px;
-  margin: 5px;
-  border-radius: 6px;
+  padding: 12px;
+  margin: 8px;
+  border-radius: 10px;
   border: none;
+  background: #1e293b;
+  color: white;
+  width: 200px;
 }
 
-.card-container {
+/* CARDS */
+.cards {
   display: flex;
   justify-content: center;
   gap: 20px;
@@ -77,15 +95,21 @@ input {
 }
 
 .card {
-  background: #1f2937;
-  padding: 20px;
-  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  padding: 25px;
+  border-radius: 16px;
   width: 260px;
+  transition: 0.3s;
 }
 
-.result-box {
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.result {
   margin-top: 20px;
-  font-size: 18px;
+  font-size: 20px;
   color: #38bdf8;
 }
 </style>
@@ -93,41 +117,41 @@ input {
 
 <body>
 
-<header>⚽ Football Analytics Pro</header>
-
-<nav>
-  <a onclick="showSection('home')">Inicio</a>
-  <a onclick="showSection('pred')">Predicciones</a>
-  <a onclick="showSection('odds')">Cuotas</a>
-  <a onclick="showSection('stats')">Estadísticas</a>
-</nav>
+<header>
+  <div class="logo">⚽ Football Analytics</div>
+  <nav>
+    <a onclick="show('home')">Inicio</a>
+    <a onclick="show('pred')">Predicciones</a>
+    <a onclick="show('odds')">Cuotas</a>
+    <a onclick="show('stats')">Stats</a>
+  </nav>
+</header>
 
 <!-- HOME -->
-<div id="home" class="section active">
-  <div class="hero">
-    <h1>Predicciones inteligentes de fútbol</h1>
-    <p>Analiza partidos, encuentra value bets y usa datos reales</p>
-    <div class="button" onclick="showSection('pred')">Empezar</div>
-  </div>
+<div id="home" class="section active hero">
+  <h1>Predicciones inteligentes de fútbol</h1>
+  <p>Datos, cuotas y modelos en una sola plataforma</p>
+  <div class="button" onclick="show('pred')">Empezar</div>
 </div>
 
-<!-- PREDICCIONES -->
+<!-- PRED -->
 <div id="pred" class="section">
   <h2>🔮 Predicción de partidos</h2>
 
-  <input id="team1" placeholder="Equipo local">
-  <input id="team2" placeholder="Equipo visitante">
+  <input id="t1" placeholder="Equipo local">
+  <input id="t2" placeholder="Equipo visitante">
   <br>
-  <div class="button" onclick="predict()">Predecir</div>
 
-  <div id="result" class="result-box"></div>
+  <div class="button" onclick="predict()">Analizar partido</div>
+
+  <div id="res" class="result"></div>
 </div>
 
-<!-- CUOTAS -->
+<!-- ODDS -->
 <div id="odds" class="section">
-  <h2>💰 Comparador de cuotas</h2>
+  <h2>💰 Mejores cuotas</h2>
 
-  <div class="card-container">
+  <div class="cards">
     <div class="card">
       <h3>Bet365</h3>
       <p>Local: 2.10</p>
@@ -151,61 +175,55 @@ input {
   </div>
 </div>
 
-<!-- ESTADÍSTICAS -->
+<!-- STATS -->
 <div id="stats" class="section">
-  <h2>📊 Estadísticas</h2>
+  <h2>📊 Estadísticas clave</h2>
 
-  <div class="card-container">
+  <div class="cards">
     <div class="card">
       <h3>Barcelona</h3>
-      <p>Goles: 65</p>
-      <p>Posesión: 63%</p>
+      <p>xG: 2.1</p>
+      <p>Forma: WWWLW</p>
     </div>
 
     <div class="card">
       <h3>Real Madrid</h3>
-      <p>Goles: 70</p>
-      <p>Posesión: 58%</p>
+      <p>xG: 2.4</p>
+      <p>Forma: WWWWW</p>
     </div>
 
     <div class="card">
       <h3>Atlético</h3>
-      <p>Goles: 50</p>
-      <p>Posesión: 52%</p>
+      <p>xG: 1.6</p>
+      <p>Forma: WLWLW</p>
     </div>
   </div>
 </div>
 
 <script>
-function showSection(section) {
-  document.querySelectorAll('.section').forEach(sec => {
-    sec.classList.remove('active');
-  });
-  document.getElementById(section).classList.add('active');
+function show(sec) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(sec).classList.add('active');
 }
 
 function predict() {
-  const t1 = document.getElementById("team1").value;
-  const t2 = document.getElementById("team2").value;
+  let t1 = document.getElementById("t1").value;
+  let t2 = document.getElementById("t2").value;
 
   if (!t1 || !t2) {
-    document.getElementById("result").innerText = "Introduce ambos equipos";
+    document.getElementById("res").innerText = "Introduce ambos equipos";
     return;
   }
 
-  const prob = Math.floor(Math.random() * 100);
+  let p = Math.random();
 
   let result = "";
 
-  if (prob > 60) {
-    result = `🏆 ${t1} gana (${prob}%)`;
-  } else if (prob < 40) {
-    result = `🏆 ${t2} gana (${100 - prob}%)`;
-  } else {
-    result = "🤝 Empate probable";
-  }
+  if (p > 0.6) result = `🏆 ${t1} favorito`;
+  else if (p < 0.4) result = `🏆 ${t2} favorito`;
+  else result = "🤝 Partido equilibrado";
 
-  document.getElementById("result").innerText = result;
+  document.getElementById("res").innerText = result;
 }
 </script>
 
