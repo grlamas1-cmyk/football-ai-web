@@ -4,200 +4,201 @@
 <meta charset="UTF-8">
 <title>Football Analytics Pro</title>
 
-<!-- Google Font -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, #0f172a, #020617);
+  background: #0f172a;
   color: white;
-}
-
-/* NAVBAR */
-header {
   display: flex;
-  justify-content: space-between;
-  padding: 20px 40px;
-  background: rgba(255,255,255,0.03);
-  backdrop-filter: blur(10px);
 }
 
-.logo {
-  font-weight: 600;
-  font-size: 18px;
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  background: #020617;
+  height: 100vh;
+  padding: 20px;
 }
 
-nav a {
-  margin-left: 20px;
+.sidebar h2 {
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+
+.menu-item {
+  margin: 15px 0;
   cursor: pointer;
   color: #94a3b8;
 }
 
-nav a:hover {
+.menu-item:hover {
   color: white;
+}
+
+/* MAIN */
+.main {
+  flex: 1;
+  padding: 20px 40px;
+}
+
+/* TOPBAR */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+/* GRID */
+.grid {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.small-card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 10px;
+  width: 180px;
+}
+
+/* INPUT */
+input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  margin: 5px;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  background: #3b82f6;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+}
+
+.result {
+  margin-top: 15px;
+  color: #38bdf8;
 }
 
 /* SECTIONS */
 .section {
   display: none;
-  padding: 60px 20px;
-  text-align: center;
 }
 
 .active {
   display: block;
-}
-
-/* HERO */
-.hero h1 {
-  font-size: 40px;
-  margin-bottom: 10px;
-}
-
-.hero p {
-  color: #94a3b8;
-}
-
-/* BUTTON */
-.button {
-  background: linear-gradient(90deg, #3b82f6, #6366f1);
-  padding: 14px 26px;
-  border-radius: 12px;
-  margin-top: 20px;
-  display: inline-block;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.button:hover {
-  transform: scale(1.05);
-}
-
-/* INPUTS */
-input {
-  padding: 12px;
-  margin: 8px;
-  border-radius: 10px;
-  border: none;
-  background: #1e293b;
-  color: white;
-  width: 200px;
-}
-
-/* CARDS */
-.cards {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.card {
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
-  padding: 25px;
-  border-radius: 16px;
-  width: 260px;
-  transition: 0.3s;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-}
-
-.result {
-  margin-top: 20px;
-  font-size: 20px;
-  color: #38bdf8;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <div class="logo">⚽ Football Analytics</div>
-  <nav>
-    <a onclick="show('home')">Inicio</a>
-    <a onclick="show('pred')">Predicciones</a>
-    <a onclick="show('odds')">Cuotas</a>
-    <a onclick="show('stats')">Stats</a>
-  </nav>
-</header>
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h2>⚽ Analytics</h2>
 
-<!-- HOME -->
-<div id="home" class="section active hero">
-  <h1>Predicciones inteligentes de fútbol</h1>
-  <p>Datos, cuotas y modelos en una sola plataforma</p>
-  <div class="button" onclick="show('pred')">Empezar</div>
+  <div class="menu-item" onclick="show('dashboard')">Dashboard</div>
+  <div class="menu-item" onclick="show('pred')">Predicciones</div>
+  <div class="menu-item" onclick="show('odds')">Cuotas</div>
+  <div class="menu-item" onclick="show('stats')">Estadísticas</div>
 </div>
 
-<!-- PRED -->
+<!-- MAIN -->
+<div class="main">
+
+<div class="topbar">
+  <h1>Dashboard</h1>
+  <div>👤 Usuario</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section active">
+
+  <div class="grid">
+    <div class="small-card">Partidos hoy: 24</div>
+    <div class="small-card">Value bets: 5</div>
+    <div class="small-card">ROI estimado: +12%</div>
+  </div>
+
+  <div class="card">
+    <h3>📊 Actividad reciente</h3>
+    <p>Predicciones generadas hoy: 18</p>
+    <p>Apuestas analizadas: 42</p>
+  </div>
+
+</div>
+
+<!-- PREDICCIONES -->
 <div id="pred" class="section">
-  <h2>🔮 Predicción de partidos</h2>
+  <h2>🔮 Predicción de partido</h2>
 
   <input id="t1" placeholder="Equipo local">
   <input id="t2" placeholder="Equipo visitante">
-  <br>
+  <br><br>
 
-  <div class="button" onclick="predict()">Analizar partido</div>
+  <button onclick="predict()">Analizar</button>
 
   <div id="res" class="result"></div>
 </div>
 
-<!-- ODDS -->
+<!-- CUOTAS -->
 <div id="odds" class="section">
-  <h2>💰 Mejores cuotas</h2>
+  <h2>💰 Comparador</h2>
 
-  <div class="cards">
+  <div class="grid">
     <div class="card">
       <h3>Bet365</h3>
-      <p>Local: 2.10</p>
-      <p>Empate: 3.40</p>
-      <p>Visitante: 3.00</p>
+      <p>2.10 / 3.40 / 3.00</p>
     </div>
 
     <div class="card">
       <h3>William Hill</h3>
-      <p>Local: 2.05</p>
-      <p>Empate: 3.50</p>
-      <p>Visitante: 3.10</p>
+      <p>2.05 / 3.50 / 3.10</p>
     </div>
 
     <div class="card">
       <h3>Codere</h3>
-      <p>Local: 2.20</p>
-      <p>Empate: 3.30</p>
-      <p>Visitante: 2.95</p>
+      <p>2.20 / 3.30 / 2.95</p>
     </div>
   </div>
 </div>
 
 <!-- STATS -->
 <div id="stats" class="section">
-  <h2>📊 Estadísticas clave</h2>
+  <h2>📊 Estadísticas</h2>
 
-  <div class="cards">
+  <div class="grid">
     <div class="card">
       <h3>Barcelona</h3>
       <p>xG: 2.1</p>
-      <p>Forma: WWWLW</p>
     </div>
 
     <div class="card">
       <h3>Real Madrid</h3>
       <p>xG: 2.4</p>
-      <p>Forma: WWWWW</p>
     </div>
 
     <div class="card">
       <h3>Atlético</h3>
       <p>xG: 1.6</p>
-      <p>Forma: WLWLW</p>
     </div>
   </div>
+</div>
+
 </div>
 
 <script>
@@ -211,7 +212,7 @@ function predict() {
   let t2 = document.getElementById("t2").value;
 
   if (!t1 || !t2) {
-    document.getElementById("res").innerText = "Introduce ambos equipos";
+    document.getElementById("res").innerText = "Introduce equipos";
     return;
   }
 
@@ -219,9 +220,9 @@ function predict() {
 
   let result = "";
 
-  if (p > 0.6) result = `🏆 ${t1} favorito`;
-  else if (p < 0.4) result = `🏆 ${t2} favorito`;
-  else result = "🤝 Partido equilibrado";
+  if (p > 0.6) result = `${t1} favorito`;
+  else if (p < 0.4) result = `${t2} favorito`;
+  else result = "Partido equilibrado";
 
   document.getElementById("res").innerText = result;
 }
