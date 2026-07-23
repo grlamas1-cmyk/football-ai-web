@@ -2,63 +2,111 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Football Analytics</title>
-
+  <title>Football Analytics Pro</title>
   <style>
     body {
-      font-family: Arial;
-      background: #0f172a;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0f1a;
       color: white;
+    }
+
+    header {
+      background: #111827;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      background: #1f2937;
+      padding: 10px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .button {
+      background: #2563eb;
+      padding: 15px 25px;
+      border-radius: 10px;
+      display: inline-block;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    .section {
+      padding: 40px;
       text-align: center;
     }
 
-    h1 {
-      color: #38bdf8;
+    .cards {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
     }
 
     .card {
-      background: #1e293b;
+      background: #1f2937;
       padding: 20px;
-      margin: 20px auto;
       border-radius: 10px;
-      width: 300px;
-    }
-
-    input {
-      padding: 8px;
-      margin: 5px;
-    }
-
-    button {
-      padding: 10px;
-      background: #38bdf8;
-      border: none;
-      cursor: pointer;
+      width: 250px;
     }
   </style>
 </head>
 
 <body>
 
-<h1>⚽ Football Analytics</h1>
+<header>
+  ⚽ Football Analytics Pro
+</header>
 
-<div class="card">
-  <h2>🔮 Predicciones</h2>
-  <input placeholder="Equipo local">
-  <input placeholder="Equipo visitante">
-  <br><br>
-  <button>Predecir</button>
-</div>
+<nav>
+  <a href="#">Predicciones</a>
+  <a href="#">Comparador de cuotas</a>
+  <a href="#">Estadísticas</a>
+  <a href="#">Analizador</a>
+</nav>
 
-<div class="card">
-  <h2>💰 Value Bets</h2>
-  <p>Próximamente</p>
-</div>
+<section class="hero">
+  <h1>Predicciones inteligentes de fútbol</h1>
+  <p>Analiza partidos, compara cuotas y mejora tus apuestas</p>
+  <div class="button">Probar predicción</div>
+</section>
 
-<div class="card">
-  <h2>📊 Estadísticas</h2>
-  <p>Próximamente</p>
-</div>
+<section class="section">
+  <h2>Funciones principales</h2>
+
+  <div class="cards">
+    <div class="card">
+      <h3>Predicciones IA</h3>
+      <p>Resultados basados en modelos avanzados</p>
+    </div>
+
+    <div class="card">
+      <h3>Comparador de cuotas</h3>
+      <p>Encuentra la mejor apuesta</p>
+    </div>
+
+    <div class="card">
+      <h3>Estadísticas</h3>
+      <p>Datos de equipos, jugadores y árbitros</p>
+    </div>
+  </div>
+</section>
 
 </body>
 </html>
