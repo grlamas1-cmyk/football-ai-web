@@ -1354,6 +1354,29 @@ loadRealFixtures(LEAGUE_ID, SEASON).then(() => {
 });
 loadRealStandings(LEAGUE_ID, SEASON);
 </script>
+<script>
+fetch("/api/matches")
+  .then(res => res.json())
+  .then(data => {
+    console.log("DATOS API:", data);
 
+    const container = document.createElement("div");
+
+    container.innerHTML = "<h2>Partidos:</h2>";
+
+    data.data.response.slice(0,5).forEach(match => {
+      const p = document.createElement("p");
+      p.innerText =
+        match.teams.home.name + " vs " + match.teams.away.name;
+
+      container.appendChild(p);
+    });
+
+    document.body.appendChild(container);
+  })
+  .catch(err => {
+    console.error("ERROR:", err);
+  });
+</script>
 </body>
 </html>
