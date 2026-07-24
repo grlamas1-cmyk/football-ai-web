@@ -2,267 +2,804 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Football Analytics Pro</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Analytics Pro — Predicciones, cuotas y análisis</title>
+<meta name="description" content="Predicciones basadas en modelo propio, comparador de cuotas y analizador de apuestas de valor para fútbol.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* GLOBAL */
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: #0f172a;
-  color: #e2e8f0;
-  display: flex;
-}
+  :root{
+    --bg:            #0a0e0c;
+    --surface:       #121810;
+    --surface-alt:   #1a2318;
+    --line:          #263024;
+    --gold:          #c9a227;
+    --gold-dim:      #8a7220;
+    --pitch:         #4a7c59;
+    --pitch-bright:  #6fae7f;
+    --text:          #edefe9;
+    --text-muted:    #8a9388;
+    --danger:        #c0554a;
+    --success:       #4f9d6e;
 
-/* SIDEBAR */
-.sidebar {
-  width: 240px;
-  background: #020617;
-  height: 100vh;
-  padding: 25px;
-  border-right: 1px solid #1e293b;
-}
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
 
-.sidebar h2 {
-  font-size: 18px;
-  margin-bottom: 35px;
-  color: #fff;
-}
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
 
-.menu-item {
-  margin: 18px 0;
-  cursor: pointer;
-  color: #94a3b8;
-  font-size: 15px;
-  transition: 0.2s;
-}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(74,124,89,0.18), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.5;
+  }
 
-.menu-item:hover {
-  color: #fff;
-  transform: translateX(4px);
-}
+  a{ color:inherit; }
 
-/* MAIN */
-.main {
-  flex: 1;
-  padding: 30px 50px;
-}
+  h1,h2,h3{
+    font-family:var(--font-display);
+    margin:0;
+    letter-spacing:-0.01em;
+  }
 
-/* TOPBAR */
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 35px;
-}
+  .mono{ font-family:var(--font-mono); }
 
-.topbar h1 {
-  margin: 0;
-  font-size: 28px;
-}
+  .eyebrow{
+    font-family:var(--font-mono);
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    font-size:12px;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:16px; height:1px;
+    background:var(--gold);
+    display:inline-block;
+  }
 
-.card {
-  background: #1e293b;
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-}
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 28px;
+  }
 
-/* GRID */
-.grid {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
+  /* ---------- header ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,14,12,0.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .header-inner{
+    max-width:1180px; margin:0 auto; padding:16px 28px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:20px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--font-display); font-weight:700; font-size:19px;
+  }
+  .logo .mark{
+    width:30px; height:30px; border-radius:50%;
+    border:1.5px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .logo .mark::before{
+    content:"";
+    width:12px; height:12px;
+    border:1px solid var(--gold);
+    transform:rotate(45deg);
+  }
+  nav{ display:flex; gap:28px; }
+  nav a{
+    text-decoration:none;
+    font-size:14px; font-weight:600;
+    color:var(--text-muted);
+    transition:color .15s ease;
+  }
+  nav a:hover, nav a:focus-visible{ color:var(--text); }
+  nav a:focus-visible{ outline:2px solid var(--gold); outline-offset:4px; }
 
-.small-card {
-  background: #1e293b;
-  padding: 18px;
-  border-radius: 10px;
-  width: 180px;
-  text-align: center;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-}
+  @media (max-width:820px){ nav{ display:none; } }
 
-/* INPUTS */
-input {
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  margin: 5px;
-  width: 200px;
-  background: #334155;
-  color: #fff;
-}
+  /* ---------- ticker (signature element) ---------- */
+  .ticker-outer{
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    white-space:nowrap;
+    position:relative;
+  }
+  .ticker-outer::before, .ticker-outer::after{
+    content:"";
+    position:absolute; top:0; bottom:0; width:60px; z-index:2;
+  }
+  .ticker-outer::before{ left:0; background:linear-gradient(90deg, var(--surface), transparent); }
+  .ticker-outer::after{ right:0; background:linear-gradient(270deg, var(--surface), transparent); }
+  .ticker-track{
+    display:inline-flex;
+    animation:scrollTicker 38s linear infinite;
+    padding:10px 0;
+  }
+  .ticker-track span{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--text-muted);
+    padding:0 26px;
+    border-right:1px solid var(--line);
+  }
+  .ticker-track span b{ color:var(--gold); font-weight:600; }
+  .ticker-track span .up{ color:var(--success); }
+  .ticker-track span .down{ color:var(--danger); }
+  @keyframes scrollTicker{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ticker-track{ animation:none; }
+  }
 
-input::placeholder {
-  color: #94a3b8;
-}
+  /* ---------- hero ---------- */
+  .hero{
+    padding:72px 0 56px;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:64px 64px;
+    background-position:center -1px;
+    -webkit-mask-image:linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+    mask-image:linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+  }
+  .hero-inner{ max-width:1180px; margin:0 auto; padding:0 28px; }
+  .hero h1{
+    font-size:clamp(32px, 5vw, 52px);
+    font-weight:700;
+    max-width:820px;
+    margin-top:14px;
+  }
+  .hero p.lead{
+    color:var(--text-muted);
+    font-size:17px;
+    max-width:560px;
+    margin-top:16px;
+  }
 
-button {
-  padding: 12px 18px;
-  border: none;
-  background: #3b82f6;
-  border-radius: 8px;
-  cursor: pointer;
-  color: white;
-  font-weight: 600;
-  transition: 0.2s;
-}
+  .predictor{
+    margin-top:40px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px;
+    max-width:760px;
+  }
+  .predictor-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    flex-wrap:wrap; gap:10px; margin-bottom:20px;
+  }
+  .predictor-head h3{ font-size:17px; }
+  .badge-demo{
+    font-family:var(--font-mono); font-size:11px;
+    color:var(--gold); border:1px solid var(--gold-dim);
+    padding:3px 8px; border-radius:20px; white-space:nowrap;
+  }
 
-button:hover {
-  background: #2563eb;
-}
+  .match-row{
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    gap:14px; align-items:center;
+  }
+  @media (max-width:560px){ .match-row{ grid-template-columns:1fr; } }
 
-.result {
-  margin-top: 15px;
-  color: #38bdf8;
-  font-size: 18px;
-  font-weight: 600;
-}
+  .field label{
+    display:block; font-size:12px; color:var(--text-muted);
+    margin-bottom:6px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.06em;
+  }
+  input, select{
+    width:100%;
+    background:var(--surface-alt);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:12px 14px;
+    border-radius:3px;
+    font-family:var(--font-body);
+    font-size:14px;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible{
+    outline:2px solid var(--gold); outline-offset:2px;
+  }
+  .vs-mark{
+    font-family:var(--font-mono); color:var(--gold-dim);
+    font-size:13px; text-align:center; padding-top:18px;
+  }
 
-/* SECTIONS */
-.section {
-  display: none;
-}
+  .btn{
+    font-family:var(--font-body); font-weight:600; font-size:14px;
+    background:var(--gold); color:#14180c;
+    border:none; padding:13px 22px; border-radius:3px;
+    cursor:pointer; transition:background .15s ease, transform .1s ease;
+  }
+  .btn:hover{ background:#dbb539; }
+  .btn:active{ transform:translateY(1px); }
+  .btn.secondary{
+    background:transparent; color:var(--text); border:1px solid var(--line);
+  }
+  .btn.secondary:hover{ border-color:var(--gold-dim); }
 
-.active {
-  display: block;
-}
+  .predict-actions{ margin-top:18px; display:flex; gap:12px; flex-wrap:wrap; }
+
+  .result-panel{
+    margin-top:22px; padding-top:22px; border-top:1px dashed var(--line);
+    display:none;
+  }
+  .result-panel.visible{ display:block; }
+  .result-headline{ font-family:var(--font-display); font-size:19px; margin-bottom:16px; }
+  .prob-bars{ display:flex; flex-direction:column; gap:10px; }
+  .prob-row{ display:grid; grid-template-columns:110px 1fr 52px; gap:12px; align-items:center; }
+  .prob-row .label{ font-size:13px; color:var(--text-muted); }
+  .prob-track{ height:8px; background:var(--surface-alt); border-radius:20px; overflow:hidden; }
+  .prob-fill{ height:100%; background:linear-gradient(90deg, var(--gold-dim), var(--gold)); border-radius:20px; transition:width .5s ease; }
+  .prob-value{ font-family:var(--font-mono); font-size:13px; text-align:right; }
+  .xg-row{ display:flex; gap:28px; margin-top:18px; }
+  .xg-item{ font-family:var(--font-mono); font-size:13px; color:var(--text-muted); }
+  .xg-item b{ display:block; font-size:22px; color:var(--text); font-family:var(--font-display); }
+
+  /* ---------- generic section ---------- */
+  .section{ padding:64px 0; border-top:1px solid var(--line); }
+  .section-head{ margin-bottom:34px; max-width:640px; }
+  .section-head h2{ font-size:clamp(24px,3vw,32px); margin-top:12px; }
+  .section-head p{ color:var(--text-muted); margin-top:10px; font-size:15px; }
+
+  /* ---------- odds comparator ---------- */
+  .odds-table-wrap{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow-x:auto;
+  }
+  table{ width:100%; border-collapse:collapse; min-width:620px; }
+  thead th{
+    text-align:left; font-family:var(--font-mono); font-size:11.5px;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);
+    padding:14px 18px; border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:14px 18px; font-size:14px; border-bottom:1px solid var(--line);
+    font-family:var(--font-mono);
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody td.bookie{ font-family:var(--font-body); font-weight:600; }
+  td.best{ color:var(--success); position:relative; }
+  td.best::after{ content:"▲"; font-size:9px; margin-left:6px; }
+
+  .arb-banner{
+    margin-top:16px; padding:14px 18px; border-radius:4px;
+    font-family:var(--font-mono); font-size:13px;
+    border:1px solid var(--line); background:var(--surface-alt);
+  }
+  .arb-banner.active{ border-color:var(--success); color:var(--success); }
+  .arb-banner.inactive{ color:var(--text-muted); }
+
+  /* ---------- analyzer ---------- */
+  .analyzer-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:24px;
+  }
+  @media (max-width:760px){ .analyzer-grid{ grid-template-columns:1fr; } }
+  .panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:26px;
+  }
+  .panel h3{ font-size:16px; margin-bottom:18px; }
+  .field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .field-grid .field.full{ grid-column:1/-1; }
+
+  .analyzer-output{ margin-top:20px; display:flex; flex-direction:column; gap:12px; }
+  .out-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 14px; background:var(--surface-alt); border-radius:3px;
+    font-size:13px;
+  }
+  .out-row .val{ font-family:var(--font-mono); font-weight:600; font-size:14px; }
+  .out-row.highlight{ border:1px solid var(--gold-dim); }
+  .out-row .val.pos{ color:var(--success); }
+  .out-row .val.neg{ color:var(--danger); }
+
+  /* ---------- stats ---------- */
+  .stats-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:820px){ .stats-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:560px){ .stats-grid{ grid-template-columns:1fr; } }
+  .stat-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:22px;
+  }
+  .stat-card .eyebrow{ margin-bottom:10px; }
+  .stat-card h3{ font-size:17px; margin-bottom:14px; }
+  .stat-line{
+    display:flex; justify-content:space-between; font-size:13px;
+    padding:8px 0; border-bottom:1px solid var(--line); color:var(--text-muted);
+  }
+  .stat-line:last-child{ border-bottom:none; }
+  .stat-line b{ color:var(--text); font-family:var(--font-mono); font-weight:600; }
+
+  /* ---------- fixtures ---------- */
+  .fixture{
+    display:grid; grid-template-columns:100px 1fr 160px;
+    align-items:center; gap:18px;
+    padding:18px; background:var(--surface); border:1px solid var(--line);
+    border-radius:4px; margin-bottom:12px;
+  }
+  @media (max-width:640px){ .fixture{ grid-template-columns:1fr; text-align:left; } }
+  .fixture .time{ font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+  .fixture .teams{ font-weight:600; font-size:15px; }
+  .fixture .teams span{ color:var(--text-muted); font-weight:400; font-size:12px; display:block; margin-top:2px; font-family:var(--font-mono); }
+  .mini-bar{ display:flex; height:6px; border-radius:20px; overflow:hidden; }
+  .mini-bar div:nth-child(1){ background:var(--gold); }
+  .mini-bar div:nth-child(2){ background:var(--line); }
+  .mini-bar div:nth-child(3){ background:var(--pitch); }
+  .fixture .pct{ font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-top:6px; display:flex; justify-content:space-between; }
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top:1px solid var(--line);
+    padding:40px 0 30px;
+    background:var(--surface);
+  }
+  .footer-grid{ display:flex; justify-content:space-between; gap:30px; flex-wrap:wrap; }
+  .footer-cols{ display:flex; gap:60px; flex-wrap:wrap; }
+  .footer-col h4{ font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:12px; }
+  .footer-col a{ display:block; font-size:13px; text-decoration:none; color:var(--text); margin-bottom:8px; }
+  .footer-col a:hover{ color:var(--gold); }
+  .responsible{
+    margin-top:30px; padding-top:24px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--text-muted); line-height:1.7;
+  }
+  .responsible b{ color:var(--gold); }
 </style>
 </head>
-
 <body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-  <h2>⚽ Analytics</h2>
-
-  <div class="menu-item" onclick="show('dashboard')">Dashboard</div>
-  <div class="menu-item" onclick="show('pred')">Predicciones</div>
-  <div class="menu-item" onclick="show('odds')">Cuotas</div>
-  <div class="menu-item" onclick="show('stats')">Estadísticas</div>
-</div>
-
-<!-- MAIN -->
-<div class="main">
-
-<div class="topbar">
-  <h1 id="title">Dashboard</h1>
-  <div>👤 Usuario</div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard" class="section active">
-
-  <div class="grid">
-    <div class="small-card">Partidos hoy: 24</div>
-    <div class="small-card">Value bets: 5</div>
-    <div class="small-card">ROI estimado: +12%</div>
+<header>
+  <div class="header-inner">
+    <div class="logo"><span class="mark"></span> Football Analytics Pro</div>
+    <nav>
+      <a href="#predicciones">Predicciones</a>
+      <a href="#cuotas">Comparador de cuotas</a>
+      <a href="#analizador">Analizador</a>
+      <a href="#estadisticas">Estadísticas</a>
+      <a href="#partidos">Próximos partidos</a>
+    </nav>
   </div>
+</header>
 
-  <div class="card">
-    <h3>📊 Actividad reciente</h3>
-    <p>Predicciones generadas hoy: 18</p>
-    <p>Apuestas analizadas: 42</p>
-  </div>
-
+<div class="ticker-outer">
+  <div class="ticker-track" id="tickerTrack"></div>
 </div>
 
-<!-- PREDICCIONES -->
-<div id="pred" class="section">
-  <h2>🔮 Predicción de partido</h2>
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">Modelo predictivo propio · demo sin conexión a API</div>
+    <h1>Predicciones inteligentes, cuotas comparadas, apuestas con criterio.</h1>
+    <p class="lead">Analiza cualquier enfrentamiento, compara las cuotas de las principales casas y calcula si una apuesta tiene valor real antes de jugarla.</p>
 
-  <input id="t1" placeholder="Equipo local">
-  <input id="t2" placeholder="Equipo visitante">
-  <br><br>
+    <div class="predictor" id="predicciones">
+      <div class="predictor-head">
+        <h3>Generar predicción</h3>
+        <span class="badge-demo">DATOS DE DEMOSTRACIÓN</span>
+      </div>
 
-  <button onclick="predict()">Analizar</button>
+      <div class="match-row">
+        <div class="field">
+          <label for="team1">Equipo local</label>
+          <input id="team1" placeholder="Ej. Celta de Vigo" autocomplete="off">
+        </div>
+        <div class="vs-mark">VS</div>
+        <div class="field">
+          <label for="team2">Equipo visitante</label>
+          <input id="team2" placeholder="Ej. Real Betis" autocomplete="off">
+        </div>
+      </div>
 
-  <div id="res" class="result"></div>
-</div>
+      <div class="predict-actions">
+        <button class="btn" onclick="predict()">Predecir resultado</button>
+        <button class="btn secondary" onclick="scrollToId('analizador')">Analizar apuesta</button>
+      </div>
 
-<!-- CUOTAS -->
-<div id="odds" class="section">
-  <h2>💰 Comparador</h2>
-
-  <div class="grid">
-    <div class="card">
-      <h3>Bet365</h3>
-      <p>2.10 / 3.40 / 3.00</p>
-    </div>
-
-    <div class="card">
-      <h3>William Hill</h3>
-      <p>2.05 / 3.50 / 3.10</p>
-    </div>
-
-    <div class="card">
-      <h3>Codere</h3>
-      <p>2.20 / 3.30 / 2.95</p>
+      <div class="result-panel" id="resultPanel">
+        <div class="result-headline" id="resultHeadline"></div>
+        <div class="prob-bars" id="probBars"></div>
+        <div class="xg-row" id="xgRow"></div>
+      </div>
     </div>
   </div>
-</div>
+</section>
 
-<!-- STATS -->
-<div id="stats" class="section">
-  <h2>📊 Estadísticas</h2>
-
-  <div class="grid">
-    <div class="card">
-      <h3>Barcelona</h3>
-      <p>xG: 2.1</p>
+<section class="section" id="cuotas">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Comparador de cuotas</div>
+      <h2>Encuentra la mejor cuota antes de apostar</h2>
+      <p>Cuotas de ejemplo para el partido seleccionado. La casilla en verde marca la mejor cuota disponible para cada resultado.</p>
     </div>
 
-    <div class="card">
-      <h3>Real Madrid</h3>
-      <p>xG: 2.4</p>
+    <div class="odds-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Casa de apuestas</th>
+            <th>1 (Local)</th>
+            <th>X (Empate)</th>
+            <th>2 (Visitante)</th>
+          </tr>
+        </thead>
+        <tbody id="oddsBody"></tbody>
+      </table>
     </div>
 
-    <div class="card">
-      <h3>Atlético</h3>
-      <p>xG: 1.6</p>
+    <div class="arb-banner" id="arbBanner"></div>
+  </div>
+</section>
+
+<section class="section" id="analizador">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Analizador de apuestas</div>
+      <h2>Calcula si una apuesta tiene valor</h2>
+      <p>Introduce la cuota que ofrece la casa y tu probabilidad estimada (la de tu modelo, o la que te dé la predicción de arriba) para ver el margen de valor y el stake recomendado según el criterio de Kelly.</p>
+    </div>
+
+    <div class="analyzer-grid">
+      <div class="panel">
+        <h3>Datos de la apuesta</h3>
+        <div class="field-grid">
+          <div class="field">
+            <label for="oddInput">Cuota ofrecida</label>
+            <input id="oddInput" type="number" step="0.01" min="1.01" value="2.10">
+          </div>
+          <div class="field">
+            <label for="probInput">Probabilidad estimada (%)</label>
+            <input id="probInput" type="number" step="1" min="1" max="99" value="52">
+          </div>
+          <div class="field">
+            <label for="bankInput">Bankroll (€)</label>
+            <input id="bankInput" type="number" step="10" min="0" value="500">
+          </div>
+          <div class="field">
+            <label for="kellyFraction">Fracción de Kelly</label>
+            <select id="kellyFraction">
+              <option value="1">Completo (agresivo)</option>
+              <option value="0.5" selected>Medio (equilibrado)</option>
+              <option value="0.25">Cuarto (conservador)</option>
+            </select>
+          </div>
+        </div>
+        <div class="predict-actions">
+          <button class="btn" onclick="analyzeBet()">Calcular valor</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Resultado del análisis</h3>
+        <div class="analyzer-output" id="analyzerOutput">
+          <div class="out-row"><span>Probabilidad implícita de la cuota</span><span class="val" id="outImplied">—</span></div>
+          <div class="out-row"><span>Margen de valor (edge)</span><span class="val" id="outEdge">—</span></div>
+          <div class="out-row highlight"><span>Stake recomendado</span><span class="val" id="outStake">—</span></div>
+          <div class="out-row"><span>Beneficio potencial</span><span class="val" id="outProfit">—</span></div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
+</section>
 
-</div>
+<section class="section" id="estadisticas">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Estadísticas</div>
+      <h2>Forma, rendimiento y enfrentamientos directos</h2>
+      <p>Datos de ejemplo — se sustituirán por estadísticas reales de equipos, jugadores y árbitros al conectar la API.</p>
+    </div>
+
+    <div class="stats-grid" id="statsGrid"></div>
+  </div>
+</section>
+
+<section class="section" id="partidos">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Próximos partidos</div>
+      <h2>Agenda con probabilidad estimada</h2>
+      <p>Selecciona un partido de la lista para cargarlo directamente en el predictor.</p>
+    </div>
+
+    <div id="fixturesList"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="logo"><span class="mark"></span> Football Analytics Pro</div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Herramientas</h4>
+          <a href="#predicciones">Predicciones</a>
+          <a href="#cuotas">Comparador de cuotas</a>
+          <a href="#analizador">Analizador de apuestas</a>
+        </div>
+        <div class="footer-col">
+          <h4>Información</h4>
+          <a href="#estadisticas">Estadísticas</a>
+          <a href="#partidos">Próximos partidos</a>
+        </div>
+      </div>
+    </div>
+    <div class="responsible">
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+    </div>
+  </div>
+</footer>
 
 <script>
-function show(sec) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById(sec).classList.add('active');
+/* =========================================================
+   DATOS DE DEMOSTRACIÓN
+   Toda esta sección debe sustituirse por llamadas a tu API
+   de predicción y a proveedores de cuotas en tiempo real.
+   ========================================================= */
 
-  // Cambiar título dinámicamente
-  const titles = {
-    dashboard: "Dashboard",
-    pred: "Predicciones",
-    odds: "Cuotas",
-    stats: "Estadísticas"
-  };
-  document.getElementById("title").innerText = titles[sec];
+const DEMO_BOOKIES = ["Bet365", "Winamax", "Bwin", "Codere", "Betfair"];
+
+const DEMO_FIXTURES = [
+  { time: "Sáb 20:00", home: "Celta de Vigo", away: "Real Betis", comp: "LaLiga · J.34" },
+  { time: "Dom 16:15", home: "Athletic Club", away: "Sevilla FC", comp: "LaLiga · J.34" },
+  { time: "Dom 18:30", home: "Real Madrid", away: "FC Barcelona", comp: "LaLiga · J.34" },
+  { time: "Lun 21:00", home: "Villarreal CF", away: "Atlético de Madrid", comp: "LaLiga · J.34" },
+];
+
+const DEMO_STATS = [
+  {
+    title: "Celta de Vigo",
+    eyebrow: "Forma últimos 5",
+    lines: [["Victorias","3"], ["Empates","1"], ["Derrotas","1"], ["Goles a favor","8"], ["Goles en contra","5"]]
+  },
+  {
+    title: "Real Betis",
+    eyebrow: "Forma últimos 5",
+    lines: [["Victorias","2"], ["Empates","2"], ["Derrotas","1"], ["Goles a favor","6"], ["Goles en contra","4"]]
+  },
+  {
+    title: "Histórico directo",
+    eyebrow: "Últimos 10 enfrentamientos",
+    lines: [["Victorias Celta","4"], ["Empates","3"], ["Victorias Betis","3"], ["Media de goles","2.6"], ["Ambos marcan","60%"]]
+  },
+];
+
+/* ---------------------------------------------------------
+   Ticker
+--------------------------------------------------------- */
+function renderTicker(){
+  const items = [
+    `<b>Real Madrid</b> vs Barcelona — 1X2 <span class="up">2.10</span> / 3.40 / <span class="down">3.20</span>`,
+    `<b>Athletic Club</b> forma reciente: 4V 1E 0D`,
+    `Valor detectado: Villarreal @ <span class="up">2.65</span> (edge +4.2%)`,
+    `<b>Sevilla FC</b> — over 2.5 goles en 7 de los últimos 10 partidos`,
+    `Cuota media mercado 1X2: 2.15 / 3.35 / 3.15`,
+    `<b>Atlético de Madrid</b> — 6 clean sheets en las últimas 10 jornadas`,
+  ];
+  const track = document.getElementById("tickerTrack");
+  const html = items.map(i => `<span>${i}</span>`).join("");
+  track.innerHTML = html + html; // duplicado para el loop continuo
 }
 
-function predict() {
-  const t1 = document.getElementById("t1").value.trim();
-  const t2 = document.getElementById("t2").value.trim();
+/* ---------------------------------------------------------
+   Predictor
+   TODO: sustituir la lógica de simulación por una llamada
+   fetch() a tu API de predicción, enviando team1 y team2,
+   y pintando la respuesta real del modelo.
+--------------------------------------------------------- */
+function predict(){
+  const team1 = document.getElementById("team1").value.trim();
+  const team2 = document.getElementById("team2").value.trim();
+  const panel = document.getElementById("resultPanel");
 
-  if (!t1 || !t2) {
-    document.getElementById("res").innerText = "Introduce equipos";
+  if(!team1 || !team2){
+    panel.classList.add("visible");
+    document.getElementById("resultHeadline").textContent = "Introduce ambos equipos para generar la predicción.";
+    document.getElementById("probBars").innerHTML = "";
+    document.getElementById("xgRow").innerHTML = "";
     return;
   }
 
-  const p = Math.random();
-  let result = p > 0.6 ? `${t1} favorito`
-             : p < 0.4 ? `${t2} favorito`
-             : "Partido equilibrado";
+  // --- Simulación de modelo (reemplazar por API) ---
+  let pHome = Math.round(28 + Math.random() * 44);
+  let pAway = Math.round(Math.random() * (92 - pHome));
+  let pDraw = 100 - pHome - pAway;
+  if(pDraw < 0){ pDraw = 0; }
 
-  document.getElementById("res").innerText = result;
+  const xgHome = (0.6 + Math.random() * 2.1).toFixed(2);
+  const xgAway = (0.5 + Math.random() * 1.9).toFixed(2);
+
+  const favorite = pHome >= pAway && pHome >= pDraw
+    ? `${team1} parte como favorito`
+    : pAway >= pHome && pAway >= pDraw
+      ? `${team2} parte como favorito`
+      : "Encuentro muy igualado, empate probable";
+
+  document.getElementById("resultHeadline").textContent = `${team1} vs ${team2} — ${favorite}`;
+
+  document.getElementById("probBars").innerHTML = `
+    ${probRow(team1, pHome)}
+    ${probRow("Empate", pDraw)}
+    ${probRow(team2, pAway)}
+  `;
+
+  document.getElementById("xgRow").innerHTML = `
+    <div class="xg-item">Goles esperados (local)<b>${xgHome}</b></div>
+    <div class="xg-item">Goles esperados (visitante)<b>${xgAway}</b></div>
+  `;
+
+  panel.classList.add("visible");
+
+  // Precarga el analizador con la probabilidad del favorito
+  const topProb = Math.max(pHome, pDraw, pAway);
+  document.getElementById("probInput").value = topProb;
 }
+
+function probRow(label, value){
+  return `
+    <div class="prob-row">
+      <div class="label">${label}</div>
+      <div class="prob-track"><div class="prob-fill" style="width:${value}%"></div></div>
+      <div class="prob-value">${value}%</div>
+    </div>
+  `;
+}
+
+function scrollToId(id){
+  document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ---------------------------------------------------------
+   Comparador de cuotas
+   TODO: sustituir por datos reales de un proveedor de cuotas.
+--------------------------------------------------------- */
+function renderOdds(){
+  const rows = DEMO_BOOKIES.map(name => ({
+    name,
+    home: +(1.7 + Math.random() * 1.3).toFixed(2),
+    draw: +(3.0 + Math.random() * 0.8).toFixed(2),
+    away: +(2.6 + Math.random() * 1.6).toFixed(2),
+  }));
+
+  const bestHome = Math.max(...rows.map(r => r.home));
+  const bestDraw = Math.max(...rows.map(r => r.draw));
+  const bestAway = Math.max(...rows.map(r => r.away));
+
+  document.getElementById("oddsBody").innerHTML = rows.map(r => `
+    <tr>
+      <td class="bookie">${r.name}</td>
+      <td class="${r.home === bestHome ? 'best' : ''}">${r.home.toFixed(2)}</td>
+      <td class="${r.draw === bestDraw ? 'best' : ''}">${r.draw.toFixed(2)}</td>
+      <td class="${r.away === bestAway ? 'best' : ''}">${r.away.toFixed(2)}</td>
+    </tr>
+  `).join("");
+
+  // Comprobación de arbitraje (surebet) con las mejores cuotas de cada columna
+  const arbSum = (1 / bestHome) + (1 / bestDraw) + (1 / bestAway);
+  const banner = document.getElementById("arbBanner");
+  if(arbSum < 1){
+    const margin = ((1 - arbSum) * 100).toFixed(2);
+    banner.className = "arb-banner active";
+    banner.textContent = `Oportunidad de arbitraje detectada combinando las mejores cuotas: margen teórico +${margin}%.`;
+  } else {
+    const margin = ((arbSum - 1) * 100).toFixed(2);
+    banner.className = "arb-banner inactive";
+    banner.textContent = `Sin arbitraje disponible con estas cuotas. Margen de la casa sobre el mercado: ${margin}%.`;
+  }
+}
+
+/* ---------------------------------------------------------
+   Analizador de apuestas — valor esperado y criterio de Kelly
+--------------------------------------------------------- */
+function analyzeBet(){
+  const odd = parseFloat(document.getElementById("oddInput").value);
+  const prob = parseFloat(document.getElementById("probInput").value) / 100;
+  const bank = parseFloat(document.getElementById("bankInput").value) || 0;
+  const fraction = parseFloat(document.getElementById("kellyFraction").value);
+
+  if(!odd || odd <= 1 || !prob || prob <= 0 || prob >= 1){
+    document.getElementById("outImplied").textContent = "—";
+    document.getElementById("outEdge").textContent = "Revisa los datos introducidos";
+    document.getElementById("outStake").textContent = "—";
+    document.getElementById("outProfit").textContent = "—";
+    return;
+  }
+
+  const implied = 1 / odd;
+  const edge = prob - implied;
+
+  // Criterio de Kelly: f = (b*p - q) / b, donde b = odd-1, q = 1-p
+  const b = odd - 1;
+  const q = 1 - prob;
+  let kelly = (b * prob - q) / b;
+  kelly = Math.max(kelly, 0) * fraction;
+
+  const stake = bank * kelly;
+  const profit = stake * b;
+
+  document.getElementById("outImplied").textContent = (implied * 100).toFixed(1) + "%";
+
+  const edgeEl = document.getElementById("outEdge");
+  edgeEl.textContent = (edge >= 0 ? "+" : "") + (edge * 100).toFixed(1) + "%";
+  edgeEl.className = "val " + (edge > 0 ? "pos" : "neg");
+
+  document.getElementById("outStake").textContent = stake > 0 ? "€" + stake.toFixed(2) : "Sin valor — no apostar";
+  document.getElementById("outProfit").textContent = stake > 0 ? "€" + profit.toFixed(2) : "—";
+}
+
+/* ---------------------------------------------------------
+   Estadísticas
+--------------------------------------------------------- */
+function renderStats(){
+  document.getElementById("statsGrid").innerHTML = DEMO_STATS.map(card => `
+    <div class="stat-card">
+      <div class="eyebrow">${card.eyebrow}</div>
+      <h3>${card.title}</h3>
+      ${card.lines.map(l => `<div class="stat-line"><span>${l[0]}</span><b>${l[1]}</b></div>`).join("")}
+    </div>
+  `).join("");
+}
+
+/* ---------------------------------------------------------
+   Próximos partidos
+   TODO: sustituir por el calendario real desde la API.
+--------------------------------------------------------- */
+function renderFixtures(){
+  document.getElementById("fixturesList").innerHTML = DEMO_FIXTURES.map(f => {
+    const pHome = Math.round(30 + Math.random() * 40);
+    const pAway = Math.round(Math.random() * (90 - pHome));
+    const pDraw = 100 - pHome - pAway;
+    return `
+      <div class="fixture" role="button" tabindex="0"
+           onclick="loadFixture('${f.home}','${f.away}')"
+           onkeypress="if(event.key==='Enter') loadFixture('${f.home}','${f.away}')">
+        <div class="time">${f.time}<br>${f.comp}</div>
+        <div class="teams">${f.home} — ${f.away}<span>Toca para cargar en el predictor</span></div>
+        <div>
+          <div class="mini-bar">
+            <div style="width:${pHome}%"></div>
+            <div style="width:${pDraw}%"></div>
+            <div style="width:${pAway}%"></div>
+          </div>
+          <div class="pct"><span>${pHome}%</span><span>${pDraw}%</span><span>${pAway}%</span></div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function loadFixture(home, away){
+  document.getElementById("team1").value = home;
+  document.getElementById("team2").value = away;
+  scrollToId("predicciones");
+  predict();
+}
+
+/* ---------------------------------------------------------
+   Init
+--------------------------------------------------------- */
+renderTicker();
+renderOdds();
+renderStats();
+renderFixtures();
 </script>
 
 </body>
