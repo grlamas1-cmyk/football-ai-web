@@ -1243,15 +1243,16 @@ async function loadRealStandings(leagueId = 140, season = new Date().getFullYear
    Próximos partidos
 --------------------------------------------------------- */
 
-// Carga el calendario real desde /api/fixtures (API-Football).
-// Si falla, se mantienen los partidos de demostración.
+// Carga el calendario real desde /api/matches (API-Football), que es el
+// endpoint que realmente existe en este proyecto (api/matches.js).
+// Si falla, se mantienen los partidos de demostración sin romper la página.
 async function loadRealFixtures(leagueId = 140, season = new Date().getFullYear()){
   try {
-    const res = await fetch(`/api/fixtures?league=${leagueId}&season=${season}`);
+    const res = await fetch(`/api/matches?league=${leagueId}&season=${season}&next=10`);
     const data = await res.json();
-    if(!res.ok) throw new Error(data.error || "API de calendario no disponible");
+    if(!res.ok || !data.ok) throw new Error(data.error || "API de calendario no disponible");
 
-    const fixtures = (data.response || []).map(f => {
+    const fixtures = (data.data.response || []).map(f => {
       const d = new Date(f.fixture.date);
       const dayName = d.toLocaleDateString("es-ES", { weekday: "long" });
       return {
@@ -1260,7 +1261,7 @@ async function loadRealFixtures(leagueId = 140, season = new Date().getFullYear(
               d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
         home: f.teams.home.name,
         away: f.teams.away.name,
-        comp: `${f.league.name} · J.${f.league.round.replace(/\D/g, "") || "-"}`,
+        comp: `${f.league.name} · J.${String(f.league.round).replace(/\D/g, "") || "-"}`,
         liga: f.league.name,
       };
     });
@@ -1353,30 +1354,6 @@ loadRealFixtures(LEAGUE_ID, SEASON).then(() => {
   else{ buildOddsRows(); renderBookieFilters(); renderOdds(); }
 });
 loadRealStandings(LEAGUE_ID, SEASON);
-</script>
-<script>
-fetch("/api/matches")
-  .then(res => res.json())
-  .then(data => {
-    console.log("DATOS API:", data);
-
-    const container = document.createElement("div");
-
-    container.innerHTML = "<h2>Partidos:</h2>";
-
-    data.data.response.slice(0,5).forEach(match => {
-      const p = document.createElement("p");
-      p.innerText =
-        match.teams.home.name + " vs " + match.teams.away.name;
-
-      container.appendChild(p);
-    });
-
-    document.body.appendChild(container);
-  })
-  .catch(err => {
-    console.error("ERROR:", err);
-  });
 </script>
 </body>
 </html>
