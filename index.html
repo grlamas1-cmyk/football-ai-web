@@ -249,6 +249,21 @@
 
   .predict-actions{ margin-top:18px; display:flex; gap:12px; flex-wrap:wrap; }
 
+  .odds-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr 1fr;
+    gap:10px; margin-top:14px;
+  }
+  .odds-row .field label{ font-size:11px; }
+  @media (max-width:560px){ .odds-row{ grid-template-columns:1fr 1fr; } }
+  .odds-hint{ font-size:12px; color:var(--text-muted); margin-top:8px; }
+  .predict-status{
+    font-size:12px; margin-top:12px; font-family:var(--font-mono);
+    min-height:16px;
+  }
+  .predict-status.ok{ color:var(--success); }
+  .predict-status.err{ color:var(--danger); }
+
   .result-panel{
     margin-top:22px; padding-top:22px; border-top:1px dashed var(--line);
     display:none;
@@ -489,14 +504,14 @@
 
 <section class="hero">
   <div class="hero-inner">
-    <div class="eyebrow">Modelo predictivo propio · demo sin conexión a API</div>
+    <div class="eyebrow">Modelo predictivo propio · XGBoost + probabilidades de mercado</div>
     <h1>Predicciones inteligentes, cuotas comparadas, apuestas con criterio.</h1>
     <p class="lead">Analiza cualquier enfrentamiento, compara las cuotas de las principales casas y calcula si una apuesta tiene valor real antes de jugarla.</p>
 
     <div class="predictor" id="predicciones">
       <div class="predictor-head">
         <h3>Generar predicción</h3>
-        <span class="badge-demo">DATOS DE DEMOSTRACIÓN</span>
+        <span class="badge-demo" id="predictorBadge">MODELO PROPIO · XGBOOST + CUOTAS</span>
       </div>
 
       <div class="match-row">
@@ -511,10 +526,31 @@
         </div>
       </div>
 
+      <div class="odds-row">
+        <div class="field">
+          <label for="matchDate">Fecha</label>
+          <input id="matchDate" type="date">
+        </div>
+        <div class="field">
+          <label for="oddsH">Cuota 1 (local)</label>
+          <input id="oddsH" type="number" step="0.01" min="1" placeholder="auto">
+        </div>
+        <div class="field">
+          <label for="oddsD">Cuota X</label>
+          <input id="oddsD" type="number" step="0.01" min="1" placeholder="auto">
+        </div>
+        <div class="field">
+          <label for="oddsA">Cuota 2 (visitante)</label>
+          <input id="oddsA" type="number" step="0.01" min="1" placeholder="auto">
+        </div>
+      </div>
+      <div class="odds-hint">Las cuotas se autocompletan con el comparador cuando están disponibles. Puedes sobrescribirlas a mano — el modelo seleccionado (<span class="mono">mercado_temperatura</span>) las necesita para predecir.</div>
+
       <div class="predict-actions">
         <button class="btn" onclick="predict()">Predecir resultado</button>
         <button class="btn secondary" onclick="scrollToId('analizador')">Analizar apuesta</button>
       </div>
+      <div class="predict-status" id="predictStatus"></div>
 
       <div class="result-panel" id="resultPanel">
         <div class="result-headline" id="resultHeadline"></div>
@@ -809,65 +845,265 @@ function renderTicker(){
 }
 
 /* ---------------------------------------------------------
-   Predictor
-   TODO: sustituir la lógica de simulación por una llamada
-   fetch() a tu API de predicción, enviando team1 y team2,
-   y pintando la respuesta real del modelo.
+   Predictor — conexión real con el backend Python
+   (FastAPI + .joblib) a través de /api/predict (función
+   serverless de Vercel, ver api/predict.js). Esa función
+   reenvía la petición al backend real configurado con la
+   variable de entorno PYTHON_API_URL en Vercel.
 --------------------------------------------------------- */
-function predict(){
-  const team1 = document.getElementById("team1").value.trim();
-  const team2 = document.getElementById("team2").value.trim();
-  const panel = document.getElementById("resultPanel");
 
-  if(!team1 || !team2){
+// Lista de equipos tal y como los conoce el modelo (GET /teams a
+// través de /api/teams). Se usa para validar/normalizar lo que
+// escribe el usuario contra el nombre exacto que espera el modelo.
+let MODEL_TEAMS = [];
+let MODEL_TEAMS_READY = false;
+
+// Alias conocidos entre el nombre que usa esta web (o el usuario) y
+// el nombre corto que usa el modelo, según lo documentado en
+// metadata.json / el dataset de entrenamiento. Sirven de atajo antes
+// de intentar un match aproximado contra MODEL_TEAMS. AJUSTA esta
+// tabla si tus feature_columns usan nombres distintos.
+const TEAM_ALIASES = {
+  "real madrid": "Real Madrid",
+  "fc barcelona": "Barcelona",
+  "barcelona": "Barcelona",
+  "atletico de madrid": "Atl. Madrid",
+  "atletico madrid": "Atl. Madrid",
+  "athletic club": "Ath Bilbao",
+  "athletic bilbao": "Ath Bilbao",
+  "real betis": "Betis",
+  "betis": "Betis",
+  "celta": "Celta Vigo",
+  "celta de vigo": "Celta Vigo",
+  "sevilla fc": "Sevilla",
+  "sevilla": "Sevilla",
+  "villarreal cf": "Villarreal",
+  "villarreal": "Villarreal",
+  "real sociedad": "Real Sociedad",
+  "ca osasuna": "Osasuna",
+  "osasuna": "Osasuna",
+  "deportivo alaves": "Alaves",
+  "alaves": "Alaves",
+  "getafe cf": "Getafe",
+  "getafe": "Getafe",
+  "rayo vallecano": "Rayo Vallecano",
+  "rcd espanyol de barcelona": "Espanyol",
+  "rcd espanyol": "Espanyol",
+  "espanyol": "Espanyol",
+  "valencia cf": "Valencia",
+  "valencia": "Valencia",
+  "elche cf": "Elche",
+  "elche": "Elche",
+  "levante ud": "Levante",
+  "levante": "Levante",
+  // Recién ascendidos a LaLiga 2026/27: el modelo puede no tener
+  // histórico (ELO, rolling windows, etc.) para ellos todavía.
+  // Revisa metadata.json / feature_columns antes de fiarte de estas
+  // predicciones para estos tres equipos.
+  "malaga cf": "Malaga",
+  "malaga": "Malaga",
+  "r. racing club": "Racing Santander",
+  "real racing club": "Racing Santander",
+  "racing de santander": "Racing Santander",
+  "rc deportivo": "Deportivo La Coruna",
+  "rc deportivo la coruna": "Deportivo La Coruna",
+  "deportivo de la coruna": "Deportivo La Coruna",
+  "deportivo": "Deportivo La Coruna",
+};
+
+function normalizeKey(name){
+  return name
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita acentos
+    .toLowerCase()
+    .replace(/[.]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+// Carga la lista real de equipos que conoce el modelo. Si el backend
+// aún no está desplegado o /api/teams falla, el predictor sigue
+// funcionando solo con TEAM_ALIASES, sin validación estricta.
+async function loadModelTeams(){
+  try {
+    const res = await fetch("/api/teams");
+    const data = await res.json();
+    if(!res.ok || data.ok === false) throw new Error(data.error || "No disponible");
+    MODEL_TEAMS = data.data?.teams || data.teams || [];
+    MODEL_TEAMS_READY = Array.isArray(MODEL_TEAMS) && MODEL_TEAMS.length > 0;
+  } catch (err) {
+    console.warn("No se pudo cargar la lista de equipos del modelo (/api/teams): " + err.message);
+  }
+}
+
+// Resuelve el nombre que escribe el usuario al nombre exacto que
+// espera el modelo. Devuelve null si no encuentra un match razonable
+// (en vez de adivinar y mandar un nombre incorrecto al backend).
+function resolveModelTeamName(input){
+  const key = normalizeKey(input);
+
+  if(TEAM_ALIASES[key]){
+    const aliasTarget = TEAM_ALIASES[key];
+    if(MODEL_TEAMS_READY && !MODEL_TEAMS.includes(aliasTarget)){
+      const fuzzy = MODEL_TEAMS.find(t => normalizeKey(t) === normalizeKey(aliasTarget));
+      return fuzzy || aliasTarget;
+    }
+    return aliasTarget;
+  }
+
+  if(MODEL_TEAMS_READY){
+    const exact = MODEL_TEAMS.find(t => normalizeKey(t) === key);
+    if(exact) return exact;
+    const partial = MODEL_TEAMS.find(t => normalizeKey(t).includes(key) || key.includes(normalizeKey(t)));
+    if(partial) return partial;
+    return null; // hay lista real y no matchea nada: mejor no adivinar
+  }
+
+  // Sin lista real todavía: dejamos pasar el nombre tal cual como
+  // último recurso (el backend puede rechazarlo si no lo reconoce).
+  return input;
+}
+
+// Cuotas 1X2 para el payload: prioriza lo escrito a mano; si falta
+// algo, cae en la media del comparador de cuotas ya cargado.
+function getOddsInputs(){
+  const parse = id => {
+    const v = parseFloat(document.getElementById(id).value);
+    return Number.isFinite(v) && v > 1 ? v : null;
+  };
+  let odds_h = parse("oddsH");
+  let odds_d = parse("oddsD");
+  let odds_a = parse("oddsA");
+
+  if((odds_h == null || odds_d == null || odds_a == null) && ODDS_ROWS.length > 0){
+    const avg = key => {
+      const vals = ODDS_ROWS.map(r => r[key]).filter(v => typeof v === "number" && !Number.isNaN(v));
+      return vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : null;
+    };
+    odds_h = odds_h ?? avg("home");
+    odds_d = odds_d ?? avg("draw");
+    odds_a = odds_a ?? avg("away");
+  }
+  return { odds_h, odds_d, odds_a };
+}
+
+// Temporada europea (agosto→mayo) a partir de una fecha ISO.
+function seasonFromDate(isoDate){
+  const d = new Date(isoDate);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  return month >= 8
+    ? `${year}/${String(year + 1).slice(2)}`
+    : `${year - 1}/${String(year).slice(2)}`;
+}
+
+async function predict(){
+  const team1Raw = document.getElementById("team1").value.trim();
+  const team2Raw = document.getElementById("team2").value.trim();
+  const panel = document.getElementById("resultPanel");
+  const statusEl = document.getElementById("predictStatus");
+
+  if(!team1Raw || !team2Raw){
     panel.classList.add("visible");
     document.getElementById("resultHeadline").textContent = "Introduce ambos equipos para generar la predicción.";
     document.getElementById("probBars").innerHTML = "";
     document.getElementById("xgRow").innerHTML = "";
+    statusEl.textContent = "";
     return;
   }
 
-  // --- Simulación de modelo (reemplazar por API) ---
-  let pHome = Math.round(28 + Math.random() * 44);
-  let pAway = Math.round(Math.random() * (92 - pHome));
-  let pDraw = 100 - pHome - pAway;
-  if(pDraw < 0){ pDraw = 0; }
-
-  const xgHome = (0.6 + Math.random() * 2.1).toFixed(2);
-  const xgAway = (0.5 + Math.random() * 1.9).toFixed(2);
-
-  const favorite = pHome >= pAway && pHome >= pDraw
-    ? `${team1} parte como favorito`
-    : pAway >= pHome && pAway >= pDraw
-      ? `${team2} parte como favorito`
-      : "Encuentro muy igualado, empate probable";
-
-  document.getElementById("resultHeadline").textContent = `${team1} vs ${team2} — ${favorite}`;
-
-  document.getElementById("probBars").innerHTML = `
-    ${probRow(team1, pHome)}
-    ${probRow("Empate", pDraw)}
-    ${probRow(team2, pAway)}
-  `;
-
-  document.getElementById("xgRow").innerHTML = `
-    <div class="xg-item">Goles esperados (local)<b>${xgHome}</b></div>
-    <div class="xg-item">Goles esperados (visitante)<b>${xgAway}</b></div>
-  `;
-
   panel.classList.add("visible");
+  document.getElementById("resultHeadline").textContent = `${team1Raw} vs ${team2Raw}`;
+  document.getElementById("probBars").innerHTML = "";
+  document.getElementById("xgRow").innerHTML = "";
+  statusEl.className = "predict-status";
+  statusEl.textContent = "Consultando el modelo…";
 
-  // Precarga el analizador con la probabilidad del favorito
-  const topProb = Math.max(pHome, pDraw, pAway);
-  document.getElementById("probInput").value = topProb;
+  const homeTeam = resolveModelTeamName(team1Raw);
+  const awayTeam = resolveModelTeamName(team2Raw);
 
-  // Datos del último cálculo, listos para mandarlos al endpoint de análisis IA
-  LAST_PREDICTION = { team1, team2, pHome, pDraw, pAway, xgHome, xgAway };
-  const aiBox = document.getElementById("aiAnalysis");
-  aiBox.classList.remove("visible");
-  document.getElementById("aiAnalysisText").textContent = "";
-  document.getElementById("aiButton").disabled = false;
-  document.getElementById("aiButton").textContent = "✦ Generar análisis con IA";
+  if(!homeTeam || !awayTeam){
+    const unresolved = !homeTeam ? team1Raw : team2Raw;
+    statusEl.className = "predict-status err";
+    statusEl.textContent = `El modelo no reconoce "${unresolved}". Prueba con el nombre corto (ej. "Ath Bilbao", "Atl. Madrid", "Celta Vigo").`;
+    return;
+  }
+
+  const odds = getOddsInputs();
+  if(odds.odds_h == null || odds.odds_d == null || odds.odds_a == null){
+    statusEl.className = "predict-status err";
+    statusEl.textContent = "Faltan cuotas 1X2 (el modelo mercado_temperatura las necesita). Escríbelas a mano o carga primero el comparador de cuotas.";
+    return;
+  }
+
+  const matchDate = document.getElementById("matchDate").value || new Date().toISOString().slice(0, 10);
+  const season = seasonFromDate(matchDate);
+
+  const payload = {
+    home_team: homeTeam,
+    away_team: awayTeam,
+    match_date: matchDate,
+    season,
+    odds_h: odds.odds_h,
+    odds_d: odds.odds_d,
+    odds_a: odds.odds_a,
+  };
+
+  try {
+    const res = await fetch("/api/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+
+    if(!res.ok || json.ok === false){
+      throw new Error(json.error || `El backend respondió con estado ${res.status}`);
+    }
+
+    const p = json.data.probabilities;
+    const pHome = Math.round(p.H * 100);
+    const pDraw = Math.round(p.D * 100);
+    const pAway = Math.round(p.A * 100);
+
+    const favorite = json.data.prediction === "H"
+      ? `${team1Raw} parte como favorito`
+      : json.data.prediction === "A"
+        ? `${team2Raw} parte como favorito`
+        : "Encuentro muy igualado, empate probable";
+
+    document.getElementById("resultHeadline").textContent = `${team1Raw} vs ${team2Raw} — ${favorite}`;
+    document.getElementById("probBars").innerHTML = `
+      ${probRow(team1Raw, pHome)}
+      ${probRow("Empate", pDraw)}
+      ${probRow(team2Raw, pAway)}
+    `;
+
+    // xG es opcional en la respuesta: solo se pinta si el backend lo manda.
+    const xgHome = json.data.xg_home ?? json.data.expected_goals?.home ?? null;
+    const xgAway = json.data.xg_away ?? json.data.expected_goals?.away ?? null;
+    document.getElementById("xgRow").innerHTML = (xgHome != null && xgAway != null) ? `
+      <div class="xg-item">Goles esperados (local)<b>${Number(xgHome).toFixed(2)}</b></div>
+      <div class="xg-item">Goles esperados (visitante)<b>${Number(xgAway).toFixed(2)}</b></div>
+    ` : "";
+
+    statusEl.className = "predict-status ok";
+    statusEl.textContent = `✓ Modelo real (${json.data.selected_model || "mercado_temperatura"}) · ${new Date().toLocaleTimeString("es-ES")}`;
+    document.getElementById("predictorBadge").textContent = "CONECTADO AL MODELO REAL";
+
+    const topProb = Math.max(pHome, pDraw, pAway);
+    document.getElementById("probInput").value = topProb;
+
+    LAST_PREDICTION = { team1: team1Raw, team2: team2Raw, pHome, pDraw, pAway, xgHome, xgAway };
+    const aiBox = document.getElementById("aiAnalysis");
+    aiBox.classList.remove("visible");
+    document.getElementById("aiAnalysisText").textContent = "";
+    document.getElementById("aiButton").disabled = false;
+    document.getElementById("aiButton").textContent = "✦ Generar análisis con IA";
+
+  } catch (err) {
+    statusEl.className = "predict-status err";
+    statusEl.textContent = `No se pudo conectar con el modelo (${err.message}). Comprueba que el backend esté desplegado y PYTHON_API_URL configurada en Vercel.`;
+  }
 }
 
 /* ---------------------------------------------------------
@@ -1263,6 +1499,7 @@ async function loadRealFixtures(leagueId = 140, season = new Date().getFullYear(
         away: f.teams.away.name,
         comp: `${f.league.name} · J.${String(f.league.round).replace(/\D/g, "") || "-"}`,
         liga: f.league.name,
+        isoDate: f.fixture.date ? f.fixture.date.slice(0, 10) : null,
       };
     });
 
@@ -1309,8 +1546,8 @@ function renderFixtures(){
     const pDraw = 100 - pHome - pAway;
     return `
       <div class="fixture" role="button" tabindex="0"
-           onclick="loadFixture('${f.home}','${f.away}')"
-           onkeypress="if(event.key==='Enter') loadFixture('${f.home}','${f.away}')">
+           onclick="loadFixture('${f.home}','${f.away}','${f.isoDate || ""}')"
+           onkeypress="if(event.key==='Enter') loadFixture('${f.home}','${f.away}','${f.isoDate || ""}')">
         <div class="time">${f.time}<br>${f.comp}</div>
         <div class="teams">${f.home} — ${f.away}<span>Toca para cargar en el predictor</span></div>
         <div>
@@ -1326,11 +1563,12 @@ function renderFixtures(){
   }).join("");
 }
 
-function loadFixture(home, away){
+function loadFixture(home, away, isoDate){
   document.getElementById("team1").value = home;
   document.getElementById("team2").value = away;
+  if(isoDate){ document.getElementById("matchDate").value = isoDate; }
   scrollToId("predicciones");
-  predict();
+  loadRealOdds(home, away, SPORT_KEY).finally(predict);
 }
 
 /* ---------------------------------------------------------
@@ -1345,6 +1583,16 @@ const SEASON = new Date().getFullYear();
 renderTicker();
 renderOddsChart();
 renderStats();
+
+// Fecha por defecto del predictor: hoy.
+const matchDateInput = document.getElementById("matchDate");
+if(matchDateInput && !matchDateInput.value){
+  matchDateInput.value = new Date().toISOString().slice(0, 10);
+}
+
+// Carga la lista real de equipos del modelo (para validar/normalizar
+// nombres antes de llamar a /api/predict).
+loadModelTeams();
 
 // Estas tres intentan traer datos reales y, si algo falla (clave sin
 // configurar, límite de peticiones, etc.), caen solas en modo demo.
