@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -216,7 +217,7 @@
     display:block; font-size:12px; color:var(--text-muted);
     margin-bottom:6px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.06em;
   }
-  input, select{
+  input, select, textarea{
     width:100%;
     background:var(--surface-alt);
     border:1px solid var(--line);
@@ -226,6 +227,7 @@
     font-family:var(--font-body);
     font-size:14px;
   }
+  textarea{ resize:vertical; }
   input:focus-visible, select:focus-visible, button:focus-visible{
     outline:2px solid var(--gold); outline-offset:2px;
   }
@@ -567,6 +569,7 @@
       </div>
       <div class="predict-status" id="predictStatus"></div>
       <div class="odds-hint" id="resolvedTeamsNote"></div>
+      <div class="odds-hint" id="predictNotices" style="color:var(--danger)"></div>
 
       <div class="model-toggle" id="modelToggle">
         <button type="button" class="model-toggle-btn active" data-model="mercado_temperatura" onclick="selectSubmodel('mercado_temperatura')">Con cuotas (mercado)</button>
@@ -623,12 +626,7 @@
 
     <div class="chart-panel">
       <div class="chart-head">
-        <h3>Evolución de la cuota media de mercado — últimas 24h</h3>
-        <div class="chart-legend">
-          <div class="legend-item"><span class="dot" style="background:var(--gold)"></span>1 Local</div>
-          <div class="legend-item"><span class="dot" style="background:#cfd6cb"></span>X Empate</div>
-          <div class="legend-item"><span class="dot" style="background:var(--pitch-bright)"></span>2 Visitante</div>
-        </div>
+        <h3>Evolución de la cuota media de mercado</h3>
       </div>
       <div class="chart-svg-wrap" id="oddsChart"></div>
     </div>
@@ -641,6 +639,11 @@
       <div class="eyebrow">Alertas de valor</div>
       <h2>Apuestas donde el modelo detecta ventaja frente al mercado</h2>
       <p>Comparamos la probabilidad de tu modelo con la probabilidad implícita en la cuota de cada casa. Ajusta el margen mínimo para ver solo las oportunidades que te interesan.</p>
+    </div>
+
+    <div class="predict-actions">
+      <button class="btn" id="scanValueBtn" onclick="scanRealValueBets()">Buscar oportunidades reales</button>
+      <span class="odds-hint" id="alertsProgress"></span>
     </div>
 
     <div class="threshold-row">
@@ -660,6 +663,23 @@
       <div class="eyebrow">Analizador de apuestas</div>
       <h2>Calcula si una apuesta tiene valor</h2>
       <p>Introduce la cuota que ofrece la casa y tu probabilidad estimada (la de tu modelo, o la que te dé la predicción de arriba) para ver el margen de valor y el stake recomendado según el criterio de Kelly.</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:20px">
+      <h3>Escribe tu apuesta con tus propias palabras</h3>
+      <p class="odds-hint" style="margin-top:0">
+        Ej: "Real Madrid gana a Barcelona a cuota 1.85" o "Empate entre Celta y Betis a 3.20".
+        Reconocemos apodos y toleramos alguna errata. La probabilidad no hace falta escribirla:
+        se calcula sola con el modelo real y las cuotas reales de mercado.
+      </p>
+      <div class="field">
+        <label for="betText">Tu apuesta</label>
+        <textarea id="betText" rows="2" placeholder="Real Madrid gana a Barcelona a cuota 1.85"></textarea>
+      </div>
+      <div class="predict-actions">
+        <button class="btn" onclick="parseNaturalBet()">Interpretar y calcular</button>
+      </div>
+      <div class="predict-status" id="betParseStatus"></div>
     </div>
 
     <div class="analyzer-grid">
@@ -710,7 +730,7 @@
     <div class="section-head">
       <div class="eyebrow">Estadísticas</div>
       <h2>Forma, rendimiento y clasificación</h2>
-      <p id="statsSourceNote">Datos de ejemplo — se sustituyen automáticamente por la clasificación real en cuanto configures API_FOOTBALL_KEY.</p>
+      <p id="statsSourceNote">Cargando clasificación real de LaLiga…</p>
     </div>
 
     <div class="stats-grid" id="statsGrid"></div>
@@ -798,70 +818,162 @@ let DEMO_FIXTURES = [
   { day: "Martes", time: "Mar 21:00", home: "Bayern Múnich", away: "Inter de Milán", comp: "Champions League · Cuartos", liga: "Champions League" },
 ];
 
-// Guarda, por partido, la probabilidad del modelo y la cuota de mercado de cada
-// resultado — es la base de las alertas de valor (punto 7).
-// TODO: sustituir por la salida real de tu modelo + cuotas reales de la API.
+// Guarda, por partido, la probabilidad REAL del modelo (backend Python)
+// y la cuota REAL de mercado (The Odds API) de cada resultado — es la
+// base de las alertas de valor. Antes esto era 100% Math.random()
+// disfrazado de "oportunidad detectada"; ahora empieza vacío y solo se
+// rellena cuando el usuario pulsa "Buscar oportunidades reales" (ver
+// scanRealValueBets), porque cada fila implica una llamada real al
+// modelo y no queremos disparar decenas de peticiones solas al cargar.
 let VALUE_DATA = [];
+let RAW_ODDS_EVENTS = []; // respuesta completa (todos los partidos) de /api/odds
+let VALUE_SCAN_RUNNING = false;
 
-function buildValueData(){
-  VALUE_DATA = DEMO_FIXTURES.map(f => {
-    // Probabilidad del modelo propio
-    let pHome = 28 + Math.random() * 44;
-    let pAway = Math.random() * (92 - pHome);
-    let pDraw = Math.max(0, 100 - pHome - pAway);
-
-    // Estimación independiente del mercado (parte de la del modelo pero con
-    // ruido propio, como ocurre en la realidad: modelo y casas no coinciden)
-    const noisy = v => Math.max(2, v + (Math.random() * 24 - 12));
-    let mHome = noisy(pHome), mDraw = noisy(pDraw), mAway = noisy(pAway);
-    const mTotal = mHome + mDraw + mAway;
-    mHome = mHome / mTotal * 100; mDraw = mDraw / mTotal * 100; mAway = mAway / mTotal * 100;
-
-    // Cuotas con margen de casa típico (overround ~6%)
-    const toOdd = mProb => +((100 / mProb) * 0.94).toFixed(2);
-
-    return {
-      fixture: f,
-      outcomes: [
-        { label: "1 · " + f.home, modelProb: Math.round(pHome), odd: toOdd(mHome) },
-        { label: "X · Empate", modelProb: Math.round(pDraw), odd: toOdd(mDraw) },
-        { label: "2 · " + f.away, modelProb: Math.round(pAway), odd: toOdd(mAway) },
-      ]
-    };
-  });
+// Carga TODAS las cuotas de la liga en una sola llamada (a diferencia de
+// loadRealOdds, que solo se queda con el partido buscado).
+async function loadAllRealOdds(sportKey = SPORT_KEY){
+  try {
+    const res = await fetch(`/api/odds?league=${sportKey}`);
+    const data = await res.json();
+    if(!res.ok || !Array.isArray(data)) throw new Error((data && data.error) || "API de cuotas no disponible");
+    RAW_ODDS_EVENTS = data;
+  } catch (err) {
+    console.warn("No se pudieron cargar las cuotas para las alertas: " + err.message);
+    RAW_ODDS_EVENTS = [];
+  }
 }
 
-const DEMO_STATS = [
-  {
-    title: "Celta de Vigo",
-    eyebrow: "Forma últimos 5",
-    lines: [["Victorias","3"], ["Empates","1"], ["Derrotas","1"], ["Goles a favor","8"], ["Goles en contra","5"]]
-  },
-  {
-    title: "Real Betis",
-    eyebrow: "Forma últimos 5",
-    lines: [["Victorias","2"], ["Empates","2"], ["Derrotas","1"], ["Goles a favor","6"], ["Goles en contra","4"]]
-  },
-  {
-    title: "Histórico directo",
-    eyebrow: "Últimos 10 enfrentamientos",
-    lines: [["Victorias Celta","4"], ["Empates","3"], ["Victorias Betis","3"], ["Media de goles","2.6"], ["Ambos marcan","60%"]]
-  },
-];
+function findOddsEventForFixture(fixture){
+  const h = normalizeKey(fixture.home), a = normalizeKey(fixture.away);
+  return RAW_ODDS_EVENTS.find(ev => {
+    const eh = normalizeKey(ev.home_team || "");
+    const ea = normalizeKey(ev.away_team || "");
+    const homeMatch = eh.includes(h) || h.includes(eh);
+    const awayMatch = ea.includes(a) || a.includes(ea);
+    return homeMatch && awayMatch;
+  }) || null;
+}
+
+// Cuota media y mejor cuota de mercado (entre todas las casas que
+// devuelve The Odds API) para un evento concreto.
+function averageOddsFromEvent(ev){
+  const homeVals = [], drawVals = [], awayVals = [];
+  (ev.bookmakers || []).forEach(b => {
+    const outcomes = b.markets?.[0]?.outcomes || [];
+    const price = name => outcomes.find(o => o.name === name)?.price;
+    const h = price(ev.home_team), d = price("Draw"), a = price(ev.away_team);
+    if(h) homeVals.push(h);
+    if(d) drawVals.push(d);
+    if(a) awayVals.push(a);
+  });
+  if(!homeVals.length || !drawVals.length || !awayVals.length) return null;
+  const avg = arr => +(arr.reduce((s, v) => s + v, 0) / arr.length).toFixed(2);
+  return {
+    home: avg(homeVals), draw: avg(drawVals), away: avg(awayVals),
+    bestHome: Math.max(...homeVals), bestDraw: Math.max(...drawVals), bestAway: Math.max(...awayVals),
+  };
+}
+
+// Recorre los próximos partidos reales, y para cada uno que tenga
+// cuotas reales de mercado Y equipos que el modelo reconozca, llama a
+// /api/predict de verdad para obtener la probabilidad real y calcular
+// el edge frente al mercado. Es una acción explícita del usuario (no se
+// dispara sola) porque implica varias llamadas al backend del modelo.
+async function scanRealValueBets(){
+  if(VALUE_SCAN_RUNNING) return;
+  VALUE_SCAN_RUNNING = true;
+
+  const btn = document.getElementById("scanValueBtn");
+  const progress = document.getElementById("alertsProgress");
+  if(btn) btn.disabled = true;
+  VALUE_DATA = [];
+
+  await loadAllRealOdds(SPORT_KEY);
+
+  const candidates = DEMO_FIXTURES
+    .map(f => ({ fixture: f, event: findOddsEventForFixture(f) }))
+    .filter(c => c.event);
+
+  if(candidates.length === 0){
+    if(progress) progress.textContent = "";
+    document.getElementById("alertsCount").textContent = "0 oportunidades";
+    document.getElementById("alertsList").innerHTML =
+      `<div class="alerts-empty">No hay cuotas reales de mercado todavía para los próximos partidos (proveedor sin cobertura de estos partidos, o ODDS_API_KEY sin configurar).</div>`;
+    if(btn) btn.disabled = false;
+    VALUE_SCAN_RUNNING = false;
+    return;
+  }
+
+  for(let i = 0; i < candidates.length; i++){
+    const { fixture, event } = candidates[i];
+    if(progress) progress.textContent = `Analizando partido ${i + 1} de ${candidates.length}: ${fixture.home} — ${fixture.away}…`;
+
+    const homeR = resolveModelTeamName(fixture.home);
+    const awayR = resolveModelTeamName(fixture.away);
+    if(!homeR.name || !awayR.name) continue; // el modelo no reconoce a uno de los dos (ver resolveModelTeamName)
+
+    const priced = averageOddsFromEvent(event);
+    if(!priced) continue;
+
+    const matchDate = fixture.isoDate || new Date().toISOString().slice(0, 10);
+
+    try {
+      const res = await fetch("/api/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          home_team: homeR.name,
+          away_team: awayR.name,
+          match_date: matchDate,
+          season: seasonFromDate(matchDate),
+          odds_h: priced.home,
+          odds_d: priced.draw,
+          odds_a: priced.away,
+        }),
+      });
+      const json = await res.json();
+      if(!res.ok || json.ok === false) continue;
+
+      const probs = json.data.probabilities;
+      VALUE_DATA.push({
+        fixture,
+        outcomes: [
+          { label: "1 · " + fixture.home, modelProb: Math.round(probs.H * 100), odd: priced.bestHome },
+          { label: "X · Empate", modelProb: Math.round(probs.D * 100), odd: priced.bestDraw },
+          { label: "2 · " + fixture.away, modelProb: Math.round(probs.A * 100), odd: priced.bestAway },
+        ],
+      });
+    } catch (err) {
+      continue; // un partido fallido no debe tumbar el resto del análisis
+    }
+  }
+
+  if(progress) progress.textContent = "";
+  if(btn) btn.disabled = false;
+  VALUE_SCAN_RUNNING = false;
+  renderAlerts();
+}
+
 
 /* ---------------------------------------------------------
-   Ticker
+   Ticker — antes tenía frases fijas con cuotas y "edges"
+   inventados (parecían datos reales de mercado sin serlo). Ahora
+   se construye con los próximos partidos reales ya cargados; se
+   vuelve a llamar cuando llegan los datos reales de calendario.
 --------------------------------------------------------- */
 function renderTicker(){
-  const items = [
-    `<b>Real Madrid</b> vs Barcelona — 1X2 <span class="up">2.10</span> / 3.40 / <span class="down">3.20</span>`,
-    `<b>Athletic Club</b> forma reciente: 4V 1E 0D`,
-    `Valor detectado: Villarreal @ <span class="up">2.65</span> (edge +4.2%)`,
-    `<b>Sevilla FC</b> — over 2.5 goles en 7 de los últimos 10 partidos`,
-    `Cuota media mercado 1X2: 2.15 / 3.35 / 3.15`,
-    `<b>Atlético de Madrid</b> — 6 clean sheets en las últimas 10 jornadas`,
-  ];
   const track = document.getElementById("tickerTrack");
+  if(!track) return;
+
+  let items;
+  if(DEMO_FIXTURES.length > 0){
+    items = DEMO_FIXTURES.map(f =>
+      `<b>${f.home}</b> vs ${f.away} — ${f.comp} · ${f.time}`
+    );
+  } else {
+    items = [`Cargando calendario real de LaLiga 2026/27…`];
+  }
+
   const html = items.map(i => `<span>${i}</span>`).join("");
   track.innerHTML = html + html; // duplicado para el loop continuo
 }
@@ -887,50 +999,98 @@ let MODEL_TEAMS_READY = false;
 // tabla si tus feature_columns usan nombres distintos.
 const TEAM_ALIASES = {
   "real madrid": "Real Madrid",
+  "madrid cf": "Real Madrid",
+  "merengues": "Real Madrid",
   "fc barcelona": "Barcelona",
   "barcelona": "Barcelona",
+  "barça": "Barcelona",
+  "barsa": "Barcelona",
+  "barza": "Barcelona",
+  "culés": "Barcelona",
+  "cules": "Barcelona",
   "atletico de madrid": "Atl. Madrid",
   "atletico madrid": "Atl. Madrid",
+  "atlético de madrid": "Atl. Madrid",
+  "atleti": "Atl. Madrid",
+  "at. madrid": "Atl. Madrid",
+  "colchoneros": "Atl. Madrid",
   "athletic club": "Ath Bilbao",
   "athletic bilbao": "Ath Bilbao",
+  "athletic": "Ath Bilbao",
+  "leones": "Ath Bilbao",
   "real betis": "Betis",
   "betis": "Betis",
+  "béticos": "Betis",
+  "beticos": "Betis",
+  "verdiblancos": "Betis",
   "celta": "Celta Vigo",
   "celta de vigo": "Celta Vigo",
   "sevilla fc": "Sevilla",
   "sevilla": "Sevilla",
   "villarreal cf": "Villarreal",
   "villarreal": "Villarreal",
+  "submarino amarillo": "Villarreal",
   "real sociedad": "Real Sociedad",
+  "la real": "Real Sociedad",
   "ca osasuna": "Osasuna",
   "osasuna": "Osasuna",
+  "el sadar": "Osasuna",
   "deportivo alaves": "Alaves",
+  "deportivo alavés": "Alaves",
   "alaves": "Alaves",
+  "alavés": "Alaves",
   "getafe cf": "Getafe",
   "getafe": "Getafe",
+  "azulones": "Getafe",
   "rayo vallecano": "Rayo Vallecano",
+  "rayo": "Rayo Vallecano",
+  "vallecano": "Rayo Vallecano",
   "rcd espanyol de barcelona": "Espanyol",
   "rcd espanyol": "Espanyol",
   "espanyol": "Espanyol",
+  "español": "Espanyol",
+  "espanol": "Espanyol",
+  "pericos": "Espanyol",
   "valencia cf": "Valencia",
   "valencia": "Valencia",
+  "che": "Valencia",
   "elche cf": "Elche",
   "elche": "Elche",
   "levante ud": "Levante",
   "levante": "Levante",
+  "mallorca": "Mallorca",
+  "rcd mallorca": "Mallorca",
+  "girona": "Girona",
+  "girona fc": "Girona",
   // Recién ascendidos a LaLiga 2026/27: el modelo puede no tener
-  // histórico (ELO, rolling windows, etc.) para ellos todavía.
-  // Revisa metadata.json / feature_columns antes de fiarte de estas
-  // predicciones para estos tres equipos.
+  // histórico (ELO, rolling windows, etc.) para ellos todavía, o solo
+  // uno muy antiguo (última vez en Primera). El backend ya avisa de
+  // esto con "notices" cuando hay un salto grande de temporadas — la
+  // web ahora los muestra (ver renderNotices()) en vez de ignorarlos.
   "malaga cf": "Malaga",
   "malaga": "Malaga",
-  "r. racing club": "Racing Santander",
-  "real racing club": "Racing Santander",
-  "racing de santander": "Racing Santander",
-  "rc deportivo": "Deportivo La Coruna",
-  "rc deportivo la coruna": "Deportivo La Coruna",
-  "deportivo de la coruna": "Deportivo La Coruna",
-  "deportivo": "Deportivo La Coruna",
+  "málaga": "Malaga",
+  "boquerones": "Malaga",
+  // Racing de Santander NO aparece en el histórico de entrenamiento del
+  // modelo (llevaba fuera de Primera desde antes del periodo del
+  // dataset): no hay ningún nombre válido al que apuntar. Se deja fuera
+  // de este diccionario a propósito para que resolveModelTeamName() lo
+  // trate como "no reconocido" en vez de inventarse un nombre.
+  //
+  // RC Deportivo sí jugó en el periodo del dataset (hasta 2018) y su
+  // clave real en el modelo es "La Coruna" (SIN "Deportivo" delante).
+  // OJO: antes esta tabla apuntaba a "Deportivo La Coruna", un nombre
+  // que NO existe en el modelo — cualquier predicción con el Depor
+  // fallaba o se enviaba con un nombre inválido al backend sin avisar.
+  "rc deportivo": "La Coruna",
+  "rc deportivo la coruna": "La Coruna",
+  "rc deportivo la coruña": "La Coruna",
+  "deportivo de la coruna": "La Coruna",
+  "deportivo de la coruña": "La Coruna",
+  "deportivo": "La Coruna",
+  "depor": "La Coruna",
+  "la coruna": "La Coruna",
+  "la coruña": "La Coruna",
 };
 
 function normalizeKey(name){
@@ -940,6 +1100,61 @@ function normalizeKey(name){
     .replace(/[.]/g, "")
     .trim()
     .replace(/\s+/g, " ");
+}
+
+// TEAM_ALIASES se escribi\u00f3 arriba con algunas claves acentuadas
+// ("bar\u00e7a", "m\u00e1laga"...) para que se lean bien en el c\u00f3digo, pero
+// resolveModelTeamName() siempre busca con normalizeKey(input), que
+// quita tildes. Sin este paso esas claves nunca podr\u00edan encontrarse
+// (bug real: probado en el navegador, "bar\u00e7a" no resolv\u00eda a nada).
+// Se normalizan aqu\u00ed una vez, en vez de tener que escribir cada alias
+// dos veces (con y sin tilde) a mano.
+(function normalizeAliasKeysInPlace(){
+  const normalized = {};
+  Object.keys(TEAM_ALIASES).forEach(k => { normalized[normalizeKey(k)] = TEAM_ALIASES[k]; });
+  Object.keys(TEAM_ALIASES).forEach(k => delete TEAM_ALIASES[k]);
+  Object.assign(TEAM_ALIASES, normalized);
+})();
+
+// Distancia de Levenshtein (n\u00ba m\u00ednimo de ediciones de un car\u00e1cter para
+// pasar de "a" a "b"). Se usa solo como \u00faltima red de seguridad, cuando
+// ni el alias ni un match exacto/parcial han funcionado, para tolerar
+// erratas de escritura (ej. "barcelna", "atletic bilbao").
+function levenshteinDistance(a, b){
+  const m = a.length, n = b.length;
+  if(m === 0) return n;
+  if(n === 0) return m;
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+  for(let j = 0; j <= n; j++) prev[j] = j;
+  for(let i = 1; i <= m; i++){
+    curr[0] = i;
+    for(let j = 1; j <= n; j++){
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+// Busca, contra una lista de nombres candidatos, el que m\u00e1s se parece a
+// `key` (ya normalizado) tolerando erratas. Solo devuelve un resultado
+// si hay un candidato claramente mejor que el resto \u2014 si dos quedan
+// empatados no adivinamos, igual que con los nombres ambiguos.
+function fuzzyFindTeam(key, candidateNames){
+  if(key.length < 4) return null; // muy corto para tolerar erratas con seguridad
+  let scored = candidateNames.map(name => {
+    const normName = normalizeKey(name);
+    const dist = levenshteinDistance(key, normName);
+    const maxLen = Math.max(key.length, normName.length);
+    return { name, dist, similarity: 1 - dist / maxLen };
+  });
+  scored = scored.filter(s => s.similarity >= 0.72 || s.dist <= 2);
+  if(scored.length === 0) return null;
+  scored.sort((a, b) => a.dist - b.dist);
+  if(scored.length > 1 && scored[0].dist === scored[1].dist) return null; // empate: no adivinar
+  return scored[0].name;
 }
 
 // Carga la lista real de equipos que conoce el modelo. Si el backend
@@ -970,14 +1185,20 @@ function resolveModelTeamName(input){
     const aliasTarget = TEAM_ALIASES[key];
     if(MODEL_TEAMS_READY && !MODEL_TEAMS.includes(aliasTarget)){
       const fuzzy = MODEL_TEAMS.find(t => normalizeKey(t) === normalizeKey(aliasTarget));
-      return { name: fuzzy || aliasTarget, ambiguous: false, candidates: [] };
+      if(fuzzy) return { name: fuzzy, ambiguous: false, candidates: [], noHistory: false };
+      // El alias apunta a un nombre que el modelo, con la lista real ya
+      // cargada, NO reconoce. Antes esto se enviaba igualmente al
+      // backend (podía fallar en silencio o predecir con un equipo
+      // equivocado) — ahora se trata como "sin historial" en vez de
+      // fingir que el nombre es válido.
+      return { name: null, ambiguous: false, candidates: [], noHistory: true };
     }
-    return { name: aliasTarget, ambiguous: false, candidates: [] };
+    return { name: aliasTarget, ambiguous: false, candidates: [], noHistory: false };
   }
 
   if(MODEL_TEAMS_READY){
     const exact = MODEL_TEAMS.find(t => normalizeKey(t) === key);
-    if(exact) return { name: exact, ambiguous: false, candidates: [] };
+    if(exact) return { name: exact, ambiguous: false, candidates: [], noHistory: false };
 
     // Coincidencia parcial SOLO si es única. Si el texto encaja con
     // más de un equipo (ej. "Madrid" encaja con "Real Madrid" Y con
@@ -985,14 +1206,33 @@ function resolveModelTeamName(input){
     const partials = MODEL_TEAMS.filter(t =>
       normalizeKey(t).includes(key) || key.includes(normalizeKey(t))
     );
-    if(partials.length === 1) return { name: partials[0], ambiguous: false, candidates: [] };
-    if(partials.length > 1) return { name: null, ambiguous: true, candidates: partials };
-    return { name: null, ambiguous: false, candidates: [] };
+    if(partials.length === 1) return { name: partials[0], ambiguous: false, candidates: [], noHistory: false };
+    if(partials.length > 1) return { name: null, ambiguous: true, candidates: partials, noHistory: false };
+
+    // Última red de seguridad: tolera erratas de escritura tanto contra
+    // la lista real de equipos ("Ath Bilbao") como contra los nombres
+    // largos/apodos de TEAM_ALIASES ("athletic bilbao", "atletico de
+    // madrid"...), que es donde suele estar la errata típica del
+    // usuario (ej. "atletic bilbao", sin la "h").
+    const fuzzyVsModel = fuzzyFindTeam(key, MODEL_TEAMS);
+    if(fuzzyVsModel) return { name: fuzzyVsModel, ambiguous: false, candidates: [], noHistory: false, fuzzy: true };
+
+    const aliasKeyMatch = fuzzyFindTeam(key, Object.keys(TEAM_ALIASES));
+    if(aliasKeyMatch && TEAM_ALIASES[aliasKeyMatch]){
+      const target = TEAM_ALIASES[aliasKeyMatch];
+      if(MODEL_TEAMS.includes(target)) return { name: target, ambiguous: false, candidates: [], noHistory: false, fuzzy: true };
+    }
+
+    // No hay ningún candidato razonable: puede ser un equipo real sin
+    // historial en el dataset de entrenamiento (recién ascendido, o
+    // fuera de Primera desde antes de 2015), no un simple error de
+    // escritura.
+    return { name: null, ambiguous: false, candidates: [], noHistory: true };
   }
 
   // Sin lista real todavía: dejamos pasar el nombre tal cual como
   // último recurso (el backend puede rechazarlo si no lo reconoce).
-  return { name: input, ambiguous: false, candidates: [] };
+  return { name: input, ambiguous: false, candidates: [], noHistory: false };
 }
 
 // Cuotas 1X2 para el payload: prioriza lo escrito a mano; si falta
@@ -1047,6 +1287,7 @@ async function predict(){
   document.getElementById("resultHeadline").textContent = `${team1Raw} vs ${team2Raw}`;
   document.getElementById("probBars").innerHTML = "";
   document.getElementById("xgRow").innerHTML = "";
+  renderNotices(null);
   statusEl.className = "predict-status";
   statusEl.textContent = "Consultando el modelo…";
 
@@ -1058,8 +1299,10 @@ async function predict(){
     statusEl.className = "predict-status err";
     if(bad.r.ambiguous){
       statusEl.textContent = `"${bad.raw}" es ambiguo, podría ser: ${bad.r.candidates.join(" / ")}. Escribe el nombre completo para que no se equivoque (ej. "Real Madrid" o "Atl. Madrid").`;
+    } else if(bad.r.noHistory){
+      statusEl.textContent = `"${bad.raw}" no tiene historial en los datos con los que se entrenó el modelo (puede ser un ascenso reciente, o llevar años fuera de Primera). No se puede generar una predicción fiable para este equipo todavía.`;
     } else {
-      statusEl.textContent = `El modelo no reconoce "${bad.raw}". Prueba con el nombre corto (ej. "Ath Bilbao", "Atl. Madrid", "Celta Vigo").`;
+      statusEl.textContent = `El modelo no reconoce "${bad.raw}". Prueba con el nombre corto (ej. "Ath Bilbao", "Atl. Madrid", "Celta Vigo") o revisa que esté bien escrito.`;
     }
     return;
   }
@@ -1120,7 +1363,9 @@ async function predict(){
     } else {
       document.getElementById("resolvedTeamsNote").textContent = "";
     }
+    renderNotices(json.data.notices);
     renderSelectedModel(CURRENT_SUBMODEL);
+    renderStats(team1Raw, team2Raw);
 
     statusEl.className = "predict-status ok";
     statusEl.textContent = `✓ Modelo real · ${new Date().toLocaleTimeString("es-ES")}`;
@@ -1215,8 +1460,8 @@ function selectSubmodel(key){
 /* ---------------------------------------------------------
    Análisis en lenguaje natural vía IA
    Llama a TU endpoint (/api/analysis), que es el que guarda
-   la clave de OpenAI en el servidor. El navegador nunca ve
-   la clave. Ver api/analysis.js.
+   la clave de Google Gemini (gratuita) en el servidor. El
+   navegador nunca ve la clave. Ver api/analysis.js.
 --------------------------------------------------------- */
 let LAST_PREDICTION = null;
 
@@ -1248,11 +1493,24 @@ async function generateAIAnalysis(){
     textEl.textContent = data.analysis;
     btn.textContent = "✦ Regenerar análisis";
   } catch (err) {
-    textEl.textContent = "No se pudo generar el análisis (" + err.message + "). Comprueba que /api/analysis esté desplegado y que OPENAI_API_KEY esté configurada en el servidor.";
+    textEl.textContent = "No se pudo generar el análisis (" + err.message + "). Comprueba que GEMINI_API_KEY esté configurada en Vercel (clave gratuita en aistudio.google.com/apikey).";
     btn.textContent = "✦ Generar análisis con IA";
   } finally {
     btn.disabled = false;
   }
+}
+
+// Muestra los avisos que ya calcula el backend (regresión de ELO por
+// salto de temporadas, cuotas opcionales que faltan, etc.) y que antes
+// se recibían en data.notices pero nunca se pintaban en la web.
+function renderNotices(notices){
+  const el = document.getElementById("predictNotices");
+  if(!el) return;
+  if(!Array.isArray(notices) || notices.length === 0){
+    el.textContent = "";
+    return;
+  }
+  el.textContent = "⚠ " + notices.join(" · ");
 }
 
 function probRow(label, value){
@@ -1395,64 +1653,22 @@ function renderOdds(){
 }
 
 /* ---------------------------------------------------------
-   Gráfico de evolución de cuotas (mejora 5)
-   TODO: sustituir la serie simulada por el histórico real que
-   te devuelva tu proveedor de cuotas (cuota media por hora).
+   Gráfico de evolución de cuotas.
+   Antes esta función dibujaba un "paseo aleatorio" (Math.random)
+   presentado como si fuera el histórico real de las últimas 24h.
+   The Odds API (plan gratuito) no da histórico de cuotas, así que
+   en vez de inventar una línea se avisa claramente de que este
+   dato no está disponible todavía, sin fingir que sí lo está.
 --------------------------------------------------------- */
-function buildOddsHistory(points = 12){
-  const walk = (start) => {
-    const arr = [start];
-    for(let i = 1; i < points; i++){
-      const next = arr[i - 1] + (Math.random() - 0.5) * 0.25;
-      arr.push(+Math.max(1.15, next).toFixed(2));
-    }
-    return arr;
-  };
-  return {
-    home: walk(2.1),
-    draw: walk(3.3),
-    away: walk(3.0),
-  };
-}
-
 function renderOddsChart(){
-  const history = buildOddsHistory();
-  const width = 720, height = 220, padding = { top: 16, right: 16, bottom: 26, left: 34 };
-  const plotW = width - padding.left - padding.right;
-  const plotH = height - padding.top - padding.bottom;
-
-  const all = [...history.home, ...history.draw, ...history.away];
-  const min = Math.floor(Math.min(...all) * 10) / 10 - 0.1;
-  const max = Math.ceil(Math.max(...all) * 10) / 10 + 0.1;
-
-  const x = i => padding.left + (i / (history.home.length - 1)) * plotW;
-  const y = v => padding.top + plotH - ((v - min) / (max - min)) * plotH;
-
-  const toPath = arr => arr.map((v, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
-
-  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(t => {
-    const val = min + (max - min) * t;
-    const yy = padding.top + plotH - t * plotH;
-    return `
-      <line x1="${padding.left}" y1="${yy.toFixed(1)}" x2="${width - padding.right}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-width="1" />
-      <text x="${padding.left - 8}" y="${(yy + 4).toFixed(1)}" text-anchor="end" class="chart-axis-label">${val.toFixed(2)}</text>
-    `;
-  }).join("");
-
-  const hourLabels = history.home.map((_, i) => {
-    if(i % 3 !== 0) return "";
-    const hoursAgo = (history.home.length - 1 - i) * 2;
-    return `<text x="${x(i).toFixed(1)}" y="${height - 6}" text-anchor="middle" class="chart-axis-label">${hoursAgo === 0 ? "ahora" : "-" + hoursAgo + "h"}</text>`;
-  }).join("");
-
-  document.getElementById("oddsChart").innerHTML = `
-    <svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Evolución de la cuota media en las últimas 24 horas">
-      ${gridLines}
-      <path d="${toPath(history.home)}" fill="none" stroke="var(--gold)" stroke-width="2.2" />
-      <path d="${toPath(history.draw)}" fill="none" stroke="#cfd6cb" stroke-width="2.2" />
-      <path d="${toPath(history.away)}" fill="none" stroke="var(--pitch-bright)" stroke-width="2.2" />
-      ${hourLabels}
-    </svg>
+  const el = document.getElementById("oddsChart");
+  if(!el) return;
+  el.innerHTML = `
+    <div class="alerts-empty">
+      El histórico de evolución de cuotas no está disponible: el plan gratuito de tu proveedor de cuotas (The Odds API)
+      no ofrece datos históricos, solo la cuota actual. Esta web ya no muestra un gráfico inventado aquí — si más
+      adelante contratas un plan con histórico, se puede volver a activar este gráfico con datos reales.
+    </div>
   `;
 }
 
@@ -1485,8 +1701,12 @@ function renderAlerts(){
     opportunities.length === 1 ? "1 oportunidad" : `${opportunities.length} oportunidades`;
 
   const list = document.getElementById("alertsList");
+  if(VALUE_DATA.length === 0){
+    list.innerHTML = `<div class="alerts-empty">Todavía no se ha analizado ningún partido. Pulsa "Buscar oportunidades reales" arriba: se comparará la probabilidad real del modelo con las cuotas reales del mercado para cada próximo partido (puede tardar un poco, llama al modelo una vez por partido).</div>`;
+    return;
+  }
   if(opportunities.length === 0){
-    list.innerHTML = `<div class="alerts-empty">Ningún resultado supera el edge mínimo seleccionado. Baja el umbral o cambia los filtros de arriba.</div>`;
+    list.innerHTML = `<div class="alerts-empty">Ningún resultado real supera el edge mínimo seleccionado. Baja el umbral o cambia los filtros de arriba.</div>`;
     return;
   }
 
@@ -1508,6 +1728,140 @@ function sendToAnalyzer(odd, prob){
   document.getElementById("probInput").value = prob;
   scrollToId("analizador");
   analyzeBet();
+}
+
+/* ---------------------------------------------------------
+   Analizador de apuestas en lenguaje natural.
+   El usuario escribe la apuesta con sus propias palabras (equipos,
+   resultado y cuota) en vez de tener que rellenar campos técnicos
+   que igual no sabe (como "probabilidad estimada"): esa probabilidad
+   se calcula sola llamando al modelo real con cuotas reales.
+--------------------------------------------------------- */
+
+// Busca, dentro de un texto libre, qué equipos conocidos (por alias o
+// por el nombre real del modelo) se mencionan, y en qué posición del
+// texto aparece cada uno (para saber cuál se menciona primero).
+function extractTeamMentions(text){
+  const norm = normalizeKey(text);
+  const dict = new Map(); // clave normalizada -> nombre oficial del modelo
+  Object.keys(TEAM_ALIASES).forEach(k => dict.set(k, TEAM_ALIASES[k]));
+  MODEL_TEAMS.forEach(t => dict.set(normalizeKey(t), t));
+
+  const found = [];
+  dict.forEach((officialName, key) => {
+    if(key.length < 3) return; // evita falsos positivos con claves demasiado cortas
+    const idx = norm.indexOf(key);
+    if(idx !== -1) found.push({ officialName, idx, len: key.length });
+  });
+
+  // Si un mismo equipo se detecta por varias claves (ej. alias corto Y
+  // nombre largo), nos quedamos con la mención más específica (más larga).
+  const byOfficial = new Map();
+  found.forEach(f => {
+    const prev = byOfficial.get(f.officialName);
+    if(!prev || f.len > prev.len) byOfficial.set(f.officialName, f);
+  });
+
+  return [...byOfficial.values()].sort((a, b) => a.idx - b.idx);
+}
+
+async function parseNaturalBet(){
+  const text = document.getElementById("betText").value.trim();
+  const out = document.getElementById("betParseStatus");
+
+  if(!text){
+    out.className = "predict-status err";
+    out.textContent = "Escribe primero la apuesta.";
+    return;
+  }
+
+  // Cuota: "cuota 1.85", "cuota de 1.85", "@1.85", "a 1.85", o un
+  // número suelto con pinta de cuota (entre 1.01 y 15) como último recurso.
+  const oddMatch =
+    text.match(/(?:cuota(?:\s+de)?\s*[:=]?\s*|@\s*)([1-9]\d?[.,]\d{1,2})\b/i) ||
+    text.match(/\ba\s+([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/i) ||
+    text.match(/\b([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/);
+  const odd = oddMatch ? parseFloat(oddMatch[1].replace(",", ".")) : null;
+
+  const mentions = extractTeamMentions(text);
+  if(mentions.length < 2){
+    out.className = "predict-status err";
+    out.textContent = "No he identificado los dos equipos. Escríbelos con el nombre habitual o su apodo, ej: \"Real Madrid gana a Barcelona a cuota 1.85\".";
+    return;
+  }
+  const [teamA, teamB] = mentions;
+
+  const lower = text.toLowerCase();
+  let selection = null;
+  if(/empat/.test(lower)){
+    selection = "draw";
+  } else {
+    const loseMatch = lower.match(/pierde|cae\s+ante|cae\s+contra/);
+    if(loseMatch && loseMatch.index < teamB.idx){
+      selection = "away"; // "TeamA pierde ante TeamB" -> gana TeamB
+    } else if(/gana|vence|ganó|gan[oó]|victoria/.test(lower)){
+      selection = "home"; // orden de aparición: primero mencionado = local en esta apuesta
+    }
+  }
+
+  if(!selection){
+    out.className = "predict-status err";
+    out.textContent = "No he entendido el resultado (gana / empate / pierde). Prueba algo como: \"Real Madrid gana a Barcelona a cuota 1.85\" o \"Empate entre Celta y Betis a 3.20\".";
+    return;
+  }
+  if(!odd){
+    out.className = "predict-status err";
+    out.textContent = "No he encontrado la cuota en el texto. Añádela, ej: \"...a cuota 1.85\".";
+    return;
+  }
+
+  const winnerLabel = selection === "draw" ? "empate" : (selection === "home" ? teamA.officialName : teamB.officialName) + " gana";
+  out.className = "predict-status";
+  out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} — ${winnerLabel} — cuota ${odd.toFixed(2)}. Buscando cuotas reales de mercado y consultando el modelo…`;
+
+  document.getElementById("oddInput").value = odd;
+
+  await loadRealOdds(teamA.officialName, teamB.officialName, SPORT_KEY);
+  const marketOdds = getOddsInputs();
+
+  if(marketOdds.odds_h == null || marketOdds.odds_d == null || marketOdds.odds_a == null || ODDS_SOURCE === "demo"){
+    out.className = "predict-status err";
+    out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} — ${winnerLabel} — cuota ${odd.toFixed(2)}. Pero no hay cuotas reales de mercado para este partido todavía, así que no puedo calcular la probabilidad sola. Escríbela a mano abajo en "Probabilidad estimada" o inténtalo más tarde.`;
+    return;
+  }
+
+  const matchDate = document.getElementById("matchDate").value || new Date().toISOString().slice(0, 10);
+
+  try {
+    const res = await fetch("/api/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        home_team: teamA.officialName,
+        away_team: teamB.officialName,
+        match_date: matchDate,
+        season: seasonFromDate(matchDate),
+        odds_h: marketOdds.odds_h,
+        odds_d: marketOdds.odds_d,
+        odds_a: marketOdds.odds_a,
+      }),
+    });
+    const json = await res.json();
+    if(!res.ok || json.ok === false) throw new Error(json.error || "Error del backend");
+
+    const probs = json.data.probabilities;
+    const p = selection === "home" ? probs.H : selection === "away" ? probs.A : probs.D;
+    const pPct = Math.round(p * 100);
+
+    document.getElementById("probInput").value = pPct;
+    out.className = "predict-status ok";
+    out.textContent = `${teamA.officialName} vs ${teamB.officialName} — ${winnerLabel} — cuota ${odd.toFixed(2)}. Probabilidad real del modelo: ${pPct}%.`;
+    analyzeBet();
+    scrollToId("analizador");
+  } catch (err) {
+    out.className = "predict-status err";
+    out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} — ${winnerLabel} — cuota ${odd.toFixed(2)}. No se pudo consultar el modelo (${err.message}). Escribe la probabilidad a mano.`;
+  }
 }
 
 /* ---------------------------------------------------------
@@ -1550,21 +1904,65 @@ function analyzeBet(){
 }
 
 /* ---------------------------------------------------------
-   Estadísticas
+   Estadísticas — clasificación y forma reciente REALES,
+   sacadas de /api/standings (API-Football). Antes esta sección
+   mostraba dos tarjetas fijas inventadas que nunca se
+   sustituían por datos reales, aunque la clasificación cargase
+   bien; ahora las tarjetas se generan a partir de la misma
+   tabla real que alimenta el bloque de clasificación de abajo.
 --------------------------------------------------------- */
-function renderStats(){
-  document.getElementById("statsGrid").innerHTML = DEMO_STATS.map(card => `
-    <div class="stat-card">
-      <div class="eyebrow">${card.eyebrow}</div>
-      <h3>${card.title}</h3>
-      ${card.lines.map(l => `<div class="stat-line"><span>${l[0]}</span><b>${l[1]}</b></div>`).join("")}
-    </div>
-  `).join("");
+let STANDINGS_TABLE = null; // fila por equipo tal y como la da API-Football, o null si aún no hay datos reales.
+
+function findStandingRow(teamName){
+  if(!STANDINGS_TABLE || !teamName) return null;
+  const key = normalizeKey(teamName);
+  return STANDINGS_TABLE.find(r => {
+    const rk = normalizeKey(r.team.name);
+    return rk === key || rk.includes(key) || key.includes(rk);
+  }) || null;
 }
 
-// Carga la clasificación real desde /api/standings (API-Football).
-// Si no hay clave configurada o falla la petición, se dejan las tarjetas
-// de demo tal cual y no se muestra la tabla.
+function statCardFromRow(row){
+  // API-Football da "form" como "WWDLW" (más reciente al final).
+  const formSpanish = (row.form || "").split("").reverse()
+    .map(c => (c === "W" ? "V" : c === "D" ? "E" : c === "L" ? "D" : c))
+    .join(" ");
+  return `
+    <div class="stat-card">
+      <div class="eyebrow">#${row.rank} en LaLiga · ${row.points} pts</div>
+      <h3>${row.team.name}</h3>
+      <div class="stat-line"><span>Forma reciente (más nuevo primero)</span><b>${formSpanish || "—"}</b></div>
+      <div class="stat-line"><span>Victorias</span><b>${row.all.win}</b></div>
+      <div class="stat-line"><span>Empates</span><b>${row.all.draw}</b></div>
+      <div class="stat-line"><span>Derrotas</span><b>${row.all.lose}</b></div>
+      <div class="stat-line"><span>Goles a favor</span><b>${row.all.goals.for}</b></div>
+      <div class="stat-line"><span>Goles en contra</span><b>${row.all.goals.against}</b></div>
+    </div>
+  `;
+}
+
+// Pinta tarjetas de forma real para los dos equipos indicados (o del
+// último partido predicho/seleccionado si no se pasan). Se llama tras
+// cargar la clasificación, tras cada predicción y al elegir un partido
+// de la agenda.
+function renderStats(teamAName, teamBName){
+  const grid = document.getElementById("statsGrid");
+  if(!STANDINGS_TABLE){
+    grid.innerHTML = `<div class="alerts-empty">Clasificación real no disponible todavía (revisa que API_FOOTBALL_KEY esté configurada en Vercel).</div>`;
+    return;
+  }
+  const names = [teamAName, teamBName].filter(Boolean);
+  const rows = names.map(findStandingRow).filter(Boolean);
+  if(rows.length === 0){
+    grid.innerHTML = `<div class="alerts-empty">Genera una predicción o elige un partido de "Próximos partidos" para ver aquí la forma real de esos equipos.</div>`;
+    return;
+  }
+  grid.innerHTML = rows.map(statCardFromRow).join("");
+}
+
+// Carga la clasificación real desde /api/standings (API-Football). Si
+// no hay clave configurada o falla la petición, se avisa claramente en
+// vez de dejar tarjetas inventadas puestas como si fueran reales.
 async function loadRealStandings(leagueId = 140, season = new Date().getFullYear()){
   try {
     const res = await fetch(`/api/standings?league=${leagueId}&season=${season}`);
@@ -1590,8 +1988,15 @@ async function loadRealStandings(leagueId = 140, season = new Date().getFullYear
 
     document.getElementById("standingsWrap").style.display = "block";
     document.getElementById("statsSourceNote").textContent = "Clasificación en vivo vía API-Football.";
+
+    STANDINGS_TABLE = table;
+    renderStats(document.getElementById("team1")?.value, document.getElementById("team2")?.value);
   } catch (err) {
-    console.warn("Clasificación en demo (motivo: " + err.message + ")");
+    console.warn("Clasificación no disponible (motivo: " + err.message + ")");
+    document.getElementById("statsSourceNote").textContent =
+      "No se pudo cargar la clasificación real (" + err.message + "). Revisa API_FOOTBALL_KEY en Vercel.";
+    STANDINGS_TABLE = null;
+    renderStats();
   }
 }
 
@@ -1630,8 +2035,8 @@ async function loadRealFixtures(leagueId = 140, season = new Date().getFullYear(
   }
   populateFixtureFilters();
   renderFixtures();
-  buildValueData();
-  renderAlerts();
+  renderTicker();
+  renderAlerts(); // VALUE_DATA sigue vacío hasta que el usuario pulse "Buscar oportunidades reales"
 }
 
 function populateFixtureFilters(){
@@ -1661,23 +2066,12 @@ function renderFixtures(){
   }
 
   document.getElementById("fixturesList").innerHTML = filtered.map(f => {
-    const pHome = Math.round(30 + Math.random() * 40);
-    const pAway = Math.round(Math.random() * (90 - pHome));
-    const pDraw = 100 - pHome - pAway;
     return `
       <div class="fixture" role="button" tabindex="0"
            onclick="loadFixture('${f.home}','${f.away}','${f.isoDate || ""}')"
            onkeypress="if(event.key==='Enter') loadFixture('${f.home}','${f.away}','${f.isoDate || ""}')">
         <div class="time">${f.time}<br>${f.comp}</div>
-        <div class="teams">${f.home} — ${f.away}<span>Toca para cargar en el predictor</span></div>
-        <div>
-          <div class="mini-bar">
-            <div style="width:${pHome}%"></div>
-            <div style="width:${pDraw}%"></div>
-            <div style="width:${pAway}%"></div>
-          </div>
-          <div class="pct"><span>${pHome}%</span><span>${pDraw}%</span><span>${pAway}%</span></div>
-        </div>
+        <div class="teams">${f.home} — ${f.away}<span>Toca para predecir con el modelo real</span></div>
       </div>
     `;
   }).join("");
@@ -1688,6 +2082,7 @@ function loadFixture(home, away, isoDate){
   document.getElementById("team2").value = away;
   if(isoDate){ document.getElementById("matchDate").value = isoDate; }
   scrollToId("predicciones");
+  renderStats(home, away);
   loadRealOdds(home, away, SPORT_KEY).finally(predict);
 }
 
