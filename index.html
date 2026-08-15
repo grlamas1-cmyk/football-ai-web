@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1073,9 +1072,20 @@ const TEAM_ALIASES = {
   "boquerones": "Malaga",
   // Racing de Santander NO aparece en el histórico de entrenamiento del
   // modelo (llevaba fuera de Primera desde antes del periodo del
-  // dataset): no hay ningún nombre válido al que apuntar. Se deja fuera
-  // de este diccionario a propósito para que resolveModelTeamName() lo
-  // trate como "no reconocido" en vez de inventarse un nombre.
+  // dataset). El backend (predict.py) ya se actualizó para admitir
+  // equipos sin historial como "en frío" (ELO base, sin estadísticas
+  // recientes) en vez de rechazar la predicción — el submodelo en
+  // producción (mercado_temperatura) ni siquiera necesita ese
+  // historial. Por eso SÍ tiene alias aquí, pero apunta a un nombre que
+  // nunca aparecerá en /api/teams: ver COLD_START_TEAMS más abajo, que
+  // es lo que hace que resolveModelTeamName() lo deje pasar igualmente
+  // en vez de bloquearlo como "no reconocido".
+  "racing de santander": "Racing Santander",
+  "r. racing club": "Racing Santander",
+  "real racing club": "Racing Santander",
+  "racing santander": "Racing Santander",
+  "racinguistas": "Racing Santander",
+  "racing": "Racing Santander",
   //
   // RC Deportivo sí jugó en el periodo del dataset (hasta 2018) y su
   // clave real en el modelo es "La Coruna" (SIN "Deportivo" delante).
@@ -1092,6 +1102,14 @@ const TEAM_ALIASES = {
   "la coruna": "La Coruna",
   "la coruña": "La Coruna",
 };
+
+// Equipos que el backend acepta a propósito aunque NO aparezcan en
+// /api/teams (no tienen historial de entrenamiento): predict.py los
+// trata como "en frío" en vez de rechazarlos. Si en el futuro se
+// reentrena el modelo incluyendo su historial, basta con quitarlos de
+// aquí — dejarán de necesitar esta excepción y se validarán como
+// cualquier otro equipo.
+const COLD_START_TEAMS = ["Racing Santander"];
 
 function normalizeKey(name){
   return name
@@ -1183,6 +1201,12 @@ function resolveModelTeamName(input){
 
   if(TEAM_ALIASES[key]){
     const aliasTarget = TEAM_ALIASES[key];
+    if(COLD_START_TEAMS.includes(aliasTarget)){
+      // Excepción a propósito: el backend acepta este equipo aunque no
+      // esté en /api/teams (ver COLD_START_TEAMS). No lo tratamos como
+      // "sin historial" bloqueante — se avisa, pero se deja predecir.
+      return { name: aliasTarget, ambiguous: false, candidates: [], noHistory: false, coldStart: true };
+    }
     if(MODEL_TEAMS_READY && !MODEL_TEAMS.includes(aliasTarget)){
       const fuzzy = MODEL_TEAMS.find(t => normalizeKey(t) === normalizeKey(aliasTarget));
       if(fuzzy) return { name: fuzzy, ambiguous: false, candidates: [], noHistory: false };
@@ -1363,7 +1387,14 @@ async function predict(){
     } else {
       document.getElementById("resolvedTeamsNote").textContent = "";
     }
-    renderNotices(json.data.notices);
+    // homeResolved/awayResolved.coldStart: equipo aceptado a propósito
+    // aunque no tenga historial (ver COLD_START_TEAMS). El backend ya
+    // manda su propio aviso en json.data.notices, pero por si acaso
+    // (ej. el backend aún no está actualizado) se añade aquí también.
+    const coldStartNotices = [];
+    if(homeResolved.coldStart) coldStartNotices.push(`${homeTeam} no tiene historial en el modelo: se usan valores por defecto.`);
+    if(awayResolved.coldStart) coldStartNotices.push(`${awayTeam} no tiene historial en el modelo: se usan valores por defecto.`);
+    renderNotices([...(json.data.notices || []), ...coldStartNotices]);
     renderSelectedModel(CURRENT_SUBMODEL);
     renderStats(team1Raw, team2Raw);
 
@@ -1460,8 +1491,8 @@ function selectSubmodel(key){
 /* ---------------------------------------------------------
    Análisis en lenguaje natural vía IA
    Llama a TU endpoint (/api/analysis), que es el que guarda
-   la clave de Google Gemini (gratuita) en el servidor. El
-   navegador nunca ve la clave. Ver api/analysis.js.
+   la clave de Groq (gratuita) en el servidor. El navegador
+   nunca ve la clave. Ver api/analysis.js.
 --------------------------------------------------------- */
 let LAST_PREDICTION = null;
 
@@ -1493,7 +1524,7 @@ async function generateAIAnalysis(){
     textEl.textContent = data.analysis;
     btn.textContent = "✦ Regenerar análisis";
   } catch (err) {
-    textEl.textContent = "No se pudo generar el análisis (" + err.message + "). Comprueba que GEMINI_API_KEY esté configurada en Vercel (clave gratuita en aistudio.google.com/apikey).";
+    textEl.textContent = "No se pudo generar el análisis (" + err.message + "). Comprueba que GROQ_API_KEY esté configurada en Vercel (clave gratuita en console.groq.com/keys).";
     btn.textContent = "✦ Generar análisis con IA";
   } finally {
     btn.disabled = false;
@@ -1564,9 +1595,17 @@ function renderOddsSourceTag(){
 // mantienen los datos de demostración sin romper la página.
 async function loadRealOdds(homeTeam, awayTeam, sportKey = "soccer_spain_la_liga"){
   try {
-    const res = await fetch(`/api/odds?league=${sportKey}`);
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || "API de cuotas no disponible");
+    // Reutiliza la lista completa de eventos si ya se cargó en esta
+    // visita (loadAllRealOdds la deja en caché) en vez de volver a
+    // pedirla: The Odds API en plan gratuito tiene un cupo mensual de
+    // peticiones limitado y no hace falta gastarlo dos veces seguidas.
+    let data = RAW_ODDS_EVENTS;
+    if(!data || data.length === 0){
+      const res = await fetch(`/api/odds?league=${sportKey}`);
+      data = await res.json();
+      if(!res.ok) throw new Error(data.error || "API de cuotas no disponible");
+      RAW_ODDS_EVENTS = data;
+    }
 
     const match = data.find(ev =>
       ev.home_team?.toLowerCase().includes(homeTeam.toLowerCase()) ||
@@ -1765,6 +1804,37 @@ function extractTeamMentions(text){
   return [...byOfficial.values()].sort((a, b) => a.idx - b.idx);
 }
 
+// Intento local (gratis, instantáneo, sin límite de peticiones) de
+// interpretar la apuesta. Devuelve lo que haya conseguido identificar;
+// los campos que no encuentre quedan a null.
+function parseNaturalBetLocally(text){
+  const oddMatch =
+    text.match(/(?:cuota(?:\s+de)?\s*[:=]?\s*|@\s*)([1-9]\d?[.,]\d{1,2})\b/i) ||
+    text.match(/\ba\s+([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/i) ||
+    text.match(/\b([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/);
+  const odd = oddMatch ? parseFloat(oddMatch[1].replace(",", ".")) : null;
+
+  const mentions = extractTeamMentions(text);
+  let teamA = mentions[0] || null, teamB = mentions[1] || null;
+
+  let selection = null;
+  const lower = text.toLowerCase();
+  if(mentions.length >= 2){
+    if(/empat/.test(lower)){
+      selection = "draw";
+    } else {
+      const loseMatch = lower.match(/pierde|cae\s+ante|cae\s+contra/);
+      if(loseMatch && loseMatch.index < teamB.idx){
+        selection = "away"; // "TeamA pierde ante TeamB" -> gana TeamB
+      } else if(/gana|vence|ganó|gan[oó]|victoria/.test(lower)){
+        selection = "home"; // orden de aparición: primero mencionado = local en esta apuesta
+      }
+    }
+  }
+
+  return { teamA, teamB, selection, odd };
+}
+
 async function parseNaturalBet(){
   const text = document.getElementById("betText").value.trim();
   const out = document.getElementById("betParseStatus");
@@ -1775,35 +1845,45 @@ async function parseNaturalBet(){
     return;
   }
 
-  // Cuota: "cuota 1.85", "cuota de 1.85", "@1.85", "a 1.85", o un
-  // número suelto con pinta de cuota (entre 1.01 y 15) como último recurso.
-  const oddMatch =
-    text.match(/(?:cuota(?:\s+de)?\s*[:=]?\s*|@\s*)([1-9]\d?[.,]\d{1,2})\b/i) ||
-    text.match(/\ba\s+([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/i) ||
-    text.match(/\b([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/);
-  const odd = oddMatch ? parseFloat(oddMatch[1].replace(",", ".")) : null;
+  let { teamA, teamB, selection, odd } = parseNaturalBetLocally(text);
 
-  const mentions = extractTeamMentions(text);
-  if(mentions.length < 2){
+  // El interpretador local (gratis, sin límite) es la vía principal. Si
+  // se le escapa algo (frases raras, orden distinto...), se prueba UNA
+  // vez con IA (Groq) como respaldo — pero los nombres que devuelva la
+  // IA se vuelven a pasar por resolveModelTeamName igualmente: la IA
+  // nunca decide sola qué equipo es, solo ayuda a leer el texto.
+  if(!teamA || !teamB || !selection || !odd){
+    out.className = "predict-status";
+    out.textContent = "No lo he interpretado del todo con las reglas locales, probando con IA de respaldo…";
+    try {
+      const aiRes = await fetch("/api/parse-bet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const aiJson = await aiRes.json();
+      if(aiRes.ok && !aiJson.error){
+        if((!teamA || !teamB) && aiJson.home_team && aiJson.away_team){
+          const rA = resolveModelTeamName(aiJson.home_team);
+          const rB = resolveModelTeamName(aiJson.away_team);
+          if(rA.name && rB.name){
+            teamA = { officialName: rA.name, idx: 0 };
+            teamB = { officialName: rB.name, idx: 1 };
+          }
+        }
+        if(!selection && aiJson.selection) selection = aiJson.selection;
+        if(!odd && aiJson.odd) odd = aiJson.odd;
+      }
+    } catch (err) {
+      console.warn("Respaldo de IA para la apuesta no disponible: " + err.message);
+    }
+  }
+
+  if(!teamA || !teamB){
     out.className = "predict-status err";
     out.textContent = "No he identificado los dos equipos. Escríbelos con el nombre habitual o su apodo, ej: \"Real Madrid gana a Barcelona a cuota 1.85\".";
     return;
   }
-  const [teamA, teamB] = mentions;
-
-  const lower = text.toLowerCase();
-  let selection = null;
-  if(/empat/.test(lower)){
-    selection = "draw";
-  } else {
-    const loseMatch = lower.match(/pierde|cae\s+ante|cae\s+contra/);
-    if(loseMatch && loseMatch.index < teamB.idx){
-      selection = "away"; // "TeamA pierde ante TeamB" -> gana TeamB
-    } else if(/gana|vence|ganó|gan[oó]|victoria/.test(lower)){
-      selection = "home"; // orden de aparición: primero mencionado = local en esta apuesta
-    }
-  }
-
   if(!selection){
     out.className = "predict-status err";
     out.textContent = "No he entendido el resultado (gana / empate / pierde). Prueba algo como: \"Real Madrid gana a Barcelona a cuota 1.85\" o \"Empate entre Celta y Betis a 3.20\".";
@@ -1993,8 +2073,12 @@ async function loadRealStandings(leagueId = 140, season = new Date().getFullYear
     renderStats(document.getElementById("team1")?.value, document.getElementById("team2")?.value);
   } catch (err) {
     console.warn("Clasificación no disponible (motivo: " + err.message + ")");
+    // El motivo más probable, si API_FOOTBALL_KEY ya está bien puesta en
+    // Vercel, es que tu plan de API-Football es gratuito: ese plan no da
+    // acceso a la temporada en curso (solo a 2022-2024), así que la
+    // clasificación en vivo no se puede traer sin subir de plan.
     document.getElementById("statsSourceNote").textContent =
-      "No se pudo cargar la clasificación real (" + err.message + "). Revisa API_FOOTBALL_KEY en Vercel.";
+      "No se pudo cargar la clasificación real (" + err.message + "). Si API_FOOTBALL_KEY ya está configurada, lo más probable es que tu plan de API-Football sea gratuito y no incluya la temporada en curso — revisa tu plan en dashboard.api-football.com.";
     STANDINGS_TABLE = null;
     renderStats();
   }
@@ -2004,10 +2088,21 @@ async function loadRealStandings(leagueId = 140, season = new Date().getFullYear
    Próximos partidos
 --------------------------------------------------------- */
 
-// Carga el calendario real desde /api/matches (API-Football), que es el
-// endpoint que realmente existe en este proyecto (api/matches.js).
-// Si falla, se mantienen los partidos de demostración sin romper la página.
+// Carga el calendario real. Dos fuentes, por este orden:
+//   1) /api/matches (API-Football) — da competición y jornada exactas,
+//      pero si tu clave es del plan gratuito, API-Football SOLO deja
+//      consultar temporadas 2022-2024 y esta llamada falla para
+//      cualquier temporada actual (comprobado en producción: error
+//      "Free plans do not have access to this season").
+//   2) /api/odds (The Odds API) — con la MISMA clave que ya usas para
+//      cuotas, y sin esa limitación de temporada: da los partidos
+//      reales de hoy aunque el plan de API-Football sea gratuito. No
+//      trae número de jornada, pero sí equipos y fecha reales.
+// Si las dos fallan, se mantienen los partidos de demostración (con la
+// competición/jornada de ejemplo) sin romper la página.
 async function loadRealFixtures(leagueId = 140, season = new Date().getFullYear()){
+  let gotRealFixtures = false;
+
   try {
     const res = await fetch(`/api/matches?league=${leagueId}&season=${season}&next=10`);
     const data = await res.json();
@@ -2030,9 +2125,36 @@ async function loadRealFixtures(leagueId = 140, season = new Date().getFullYear(
 
     if(fixtures.length === 0) throw new Error("Sin partidos próximos devueltos por la API");
     DEMO_FIXTURES = fixtures;
+    gotRealFixtures = true;
   } catch (err) {
-    console.warn("Calendario en demo (motivo: " + err.message + ")");
+    console.warn("Calendario vía API-Football no disponible (motivo: " + err.message + ")");
   }
+
+  if(!gotRealFixtures){
+    try {
+      await loadAllRealOdds(SPORT_KEY);
+      if(RAW_ODDS_EVENTS.length === 0) throw new Error("Sin partidos devueltos por el proveedor de cuotas");
+
+      DEMO_FIXTURES = RAW_ODDS_EVENTS.map(ev => {
+        const d = new Date(ev.commence_time);
+        const dayName = d.toLocaleDateString("es-ES", { weekday: "long" });
+        return {
+          day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+          time: d.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "") + " " +
+                d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
+          home: ev.home_team,
+          away: ev.away_team,
+          comp: "LaLiga",
+          liga: "LaLiga",
+          isoDate: ev.commence_time ? ev.commence_time.slice(0, 10) : null,
+        };
+      }).sort((a, b) => (a.isoDate || "").localeCompare(b.isoDate || ""));
+      gotRealFixtures = true;
+    } catch (err) {
+      console.warn("Calendario en demo (tampoco hay partidos vía cuotas; motivo: " + err.message + ")");
+    }
+  }
+
   populateFixtureFilters();
   renderFixtures();
   renderTicker();
