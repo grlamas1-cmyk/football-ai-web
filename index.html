@@ -263,6 +263,20 @@
   }
   .predict-status.ok{ color:var(--success); }
   .predict-status.err{ color:var(--danger); }
+  .odds-source-tag{
+    display:inline-block; font-family:var(--font-mono); font-size:11px;
+    padding:2px 8px; border-radius:20px; margin-top:8px;
+  }
+  .odds-source-tag.live{ color:var(--success); border:1px solid var(--success); }
+  .odds-source-tag.demo{ color:var(--danger); border:1px solid var(--danger); }
+  .model-toggle{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .model-toggle-btn{
+    font-family:var(--font-mono); font-size:11px; padding:7px 12px;
+    border-radius:20px; border:1px solid var(--line); background:transparent;
+    color:var(--text-muted); cursor:pointer;
+  }
+  .model-toggle-btn.active{ border-color:var(--gold); color:var(--gold); }
+  .model-toggle-hint{ font-size:12px; color:var(--text-muted); margin-top:8px; }
 
   .result-panel{
     margin-top:22px; padding-top:22px; border-top:1px dashed var(--line);
@@ -545,12 +559,19 @@
         </div>
       </div>
       <div class="odds-hint">Las cuotas se autocompletan con el comparador cuando están disponibles. Puedes sobrescribirlas a mano — el modelo seleccionado (<span class="mono">mercado_temperatura</span>) las necesita para predecir.</div>
+      <span class="odds-source-tag" id="oddsSourceTag"></span>
 
       <div class="predict-actions">
         <button class="btn" onclick="predict()">Predecir resultado</button>
         <button class="btn secondary" onclick="scrollToId('analizador')">Analizar apuesta</button>
       </div>
       <div class="predict-status" id="predictStatus"></div>
+
+      <div class="model-toggle" id="modelToggle">
+        <button type="button" class="model-toggle-btn active" data-model="mercado_temperatura" onclick="selectSubmodel('mercado_temperatura')">Con cuotas (mercado)</button>
+        <button type="button" class="model-toggle-btn" data-model="directo_calibrado" onclick="selectSubmodel('directo_calibrado')">Sin cuotas (modelo propio)</button>
+      </div>
+      <div class="model-toggle-hint">"Sin cuotas" usa tu modelo XGBoost propio (<span class="mono">directo_calibrado</span>). Aviso: según tu documentación, ese modelo se entrenó con 409 variables que incluyen cuotas/mercado como una categoría más — puede no ser 100% independiente del mercado. Revisa <span class="mono">importancia_variables.csv</span> si necesitas certeza.</div>
 
       <div class="result-panel" id="resultPanel">
         <div class="result-headline" id="resultHeadline"></div>
@@ -1035,6 +1056,16 @@ async function predict(){
     return;
   }
 
+  // Si el usuario dejó las cuotas en "auto" y no hay proveedor real
+  // conectado (ODDS_SOURCE === "demo"), avisamos claramente en vez de
+  // predecir en silencio con cuotas inventadas.
+  const usedManualOdds = ["oddsH", "oddsD", "oddsA"].every(id => document.getElementById(id).value !== "");
+  if(!usedManualOdds && ODDS_SOURCE === "demo"){
+    statusEl.className = "predict-status err";
+    statusEl.textContent = "Las cuotas 'auto' son de DEMOSTRACIÓN (no hay proveedor de cuotas real conectado todavía). Escribe las cuotas a mano para no predecir con datos falsos.";
+    return;
+  }
+
   const matchDate = document.getElementById("matchDate").value || new Date().toISOString().slice(0, 10);
   const season = seasonFromDate(matchDate);
 
@@ -1060,40 +1091,14 @@ async function predict(){
       throw new Error(json.error || `El backend respondió con estado ${res.status}`);
     }
 
-    const p = json.data.probabilities;
-    const pHome = Math.round(p.H * 100);
-    const pDraw = Math.round(p.D * 100);
-    const pAway = Math.round(p.A * 100);
-
-    const favorite = json.data.prediction === "H"
-      ? `${team1Raw} parte como favorito`
-      : json.data.prediction === "A"
-        ? `${team2Raw} parte como favorito`
-        : "Encuentro muy igualado, empate probable";
-
-    document.getElementById("resultHeadline").textContent = `${team1Raw} vs ${team2Raw} — ${favorite}`;
-    document.getElementById("probBars").innerHTML = `
-      ${probRow(team1Raw, pHome)}
-      ${probRow("Empate", pDraw)}
-      ${probRow(team2Raw, pAway)}
-    `;
-
-    // xG es opcional en la respuesta: solo se pinta si el backend lo manda.
-    const xgHome = json.data.xg_home ?? json.data.expected_goals?.home ?? null;
-    const xgAway = json.data.xg_away ?? json.data.expected_goals?.away ?? null;
-    document.getElementById("xgRow").innerHTML = (xgHome != null && xgAway != null) ? `
-      <div class="xg-item">Goles esperados (local)<b>${Number(xgHome).toFixed(2)}</b></div>
-      <div class="xg-item">Goles esperados (visitante)<b>${Number(xgAway).toFixed(2)}</b></div>
-    ` : "";
+    LAST_FULL_RESPONSE = json.data;
+    LAST_TEAM_LABELS = { home: team1Raw, away: team2Raw };
+    renderSelectedModel(CURRENT_SUBMODEL);
 
     statusEl.className = "predict-status ok";
-    statusEl.textContent = `✓ Modelo real (${json.data.selected_model || "mercado_temperatura"}) · ${new Date().toLocaleTimeString("es-ES")}`;
+    statusEl.textContent = `✓ Modelo real · ${new Date().toLocaleTimeString("es-ES")}`;
     document.getElementById("predictorBadge").textContent = "CONECTADO AL MODELO REAL";
 
-    const topProb = Math.max(pHome, pDraw, pAway);
-    document.getElementById("probInput").value = topProb;
-
-    LAST_PREDICTION = { team1: team1Raw, team2: team2Raw, pHome, pDraw, pAway, xgHome, xgAway };
     const aiBox = document.getElementById("aiAnalysis");
     aiBox.classList.remove("visible");
     document.getElementById("aiAnalysisText").textContent = "";
@@ -1105,6 +1110,80 @@ async function predict(){
     statusEl.textContent = `No se pudo conectar con el modelo (${err.message}). Comprueba que el backend esté desplegado y PYTHON_API_URL configurada en Vercel.`;
   }
 }
+
+// Guarda la última respuesta completa del backend (incluye
+// all_model_probabilities) para poder cambiar de submodelo sin volver
+// a llamar a la API.
+let LAST_FULL_RESPONSE = null;
+let LAST_TEAM_LABELS = null;
+let CURRENT_SUBMODEL = "mercado_temperatura";
+
+
+// Pinta en pantalla las probabilidades del submodelo elegido (key),
+// usando los datos ya guardados en LAST_FULL_RESPONSE. No hace
+// ninguna llamada nueva a la API.
+function renderSelectedModel(key){
+  if(!LAST_FULL_RESPONSE || !LAST_TEAM_LABELS) return;
+  CURRENT_SUBMODEL = key;
+
+  document.querySelectorAll(".model-toggle-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.model === key);
+  });
+
+  const isSelectedModel = key === LAST_FULL_RESPONSE.selected_model;
+  const probs = isSelectedModel
+    ? LAST_FULL_RESPONSE.probabilities
+    : LAST_FULL_RESPONSE.all_model_probabilities?.[key];
+
+  if(!probs){
+    document.getElementById("predictStatus").textContent = `El backend no devolvió probabilidades para "${key}".`;
+    return;
+  }
+
+  const pHome = Math.round(probs.H * 100);
+  const pDraw = Math.round(probs.D * 100);
+  const pAway = Math.round(probs.A * 100);
+
+  const topKey = Object.entries({ H: pHome, D: pDraw, A: pAway }).sort((a, b) => b[1] - a[1])[0][0];
+  const { home: team1Raw, away: team2Raw } = LAST_TEAM_LABELS;
+  const favorite = topKey === "H"
+    ? `${team1Raw} parte como favorito`
+    : topKey === "A"
+      ? `${team2Raw} parte como favorito`
+      : "Encuentro muy igualado, empate probable";
+
+  const modelTag = key === "mercado_temperatura" ? "con cuotas de mercado" : "modelo propio, sin cuotas";
+  document.getElementById("resultHeadline").textContent = `${team1Raw} vs ${team2Raw} — ${favorite} (${modelTag})`;
+  document.getElementById("probBars").innerHTML = `
+    ${probRow(team1Raw, pHome)}
+    ${probRow("Empate", pDraw)}
+    ${probRow(team2Raw, pAway)}
+  `;
+
+  const xgHome = LAST_FULL_RESPONSE.expected_goals?.home ?? null;
+  const xgAway = LAST_FULL_RESPONSE.expected_goals?.away ?? null;
+  document.getElementById("xgRow").innerHTML = (xgHome != null && xgAway != null) ? `
+    <div class="xg-item">Goles esperados (local)<b>${Number(xgHome).toFixed(2)}</b></div>
+    <div class="xg-item">Goles esperados (visitante)<b>${Number(xgAway).toFixed(2)}</b></div>
+  ` : "";
+
+  const topProb = Math.max(pHome, pDraw, pAway);
+  document.getElementById("probInput").value = topProb;
+  LAST_PREDICTION = { team1: team1Raw, team2: team2Raw, pHome, pDraw, pAway, xgHome, xgAway };
+}
+
+// Llamado por los botones "Con cuotas" / "Sin cuotas".
+function selectSubmodel(key){
+  if(!LAST_FULL_RESPONSE){
+    CURRENT_SUBMODEL = key;
+    document.querySelectorAll(".model-toggle-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.model === key);
+    });
+    return;
+  }
+  renderSelectedModel(key);
+}
+
 
 /* ---------------------------------------------------------
    Análisis en lenguaje natural vía IA
@@ -1179,6 +1258,19 @@ function buildOddsRows(){
   }));
   ACTIVE_BOOKIES = new Set(ODDS_ROWS.map(r => r.name));
   ODDS_SOURCE = "demo";
+  renderOddsSourceTag();
+}
+
+function renderOddsSourceTag(){
+  const tag = document.getElementById("oddsSourceTag");
+  if(!tag) return;
+  if(ODDS_SOURCE === "live"){
+    tag.className = "odds-source-tag live";
+    tag.textContent = "● Cuotas reales";
+  } else {
+    tag.className = "odds-source-tag demo";
+    tag.textContent = "● Cuotas de DEMOSTRACIÓN (no reales)";
+  }
 }
 
 // Carga cuotas reales desde /api/odds (The Odds API).
@@ -1217,6 +1309,7 @@ async function loadRealOdds(homeTeam, awayTeam, sportKey = "soccer_spain_la_liga
     console.warn("Cuotas en demo (motivo: " + err.message + ")");
     buildOddsRows();
   }
+  renderOddsSourceTag();
   renderBookieFilters();
   renderOdds();
 }
@@ -1593,6 +1686,7 @@ if(matchDateInput && !matchDateInput.value){
 // Carga la lista real de equipos del modelo (para validar/normalizar
 // nombres antes de llamar a /api/predict).
 loadModelTeams();
+renderOddsSourceTag();
 
 // Estas tres intentan traer datos reales y, si algo falla (clave sin
 // configurar, límite de peticiones, etc.), caen solas en modo demo.
