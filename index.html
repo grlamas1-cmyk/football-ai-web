@@ -574,7 +574,7 @@
         <button type="button" class="model-toggle-btn active" data-model="mercado_temperatura" onclick="selectSubmodel('mercado_temperatura')">Con cuotas (mercado)</button>
         <button type="button" class="model-toggle-btn" data-model="directo_calibrado" onclick="selectSubmodel('directo_calibrado')">Sin cuotas (modelo propio)</button>
       </div>
-      <div class="model-toggle-hint">"Sin cuotas" usa tu modelo XGBoost propio (<span class="mono">directo_calibrado</span>). Aviso: según tu documentación, ese modelo se entrenó con 409 variables que incluyen cuotas/mercado como una categoría más — puede no ser 100% independiente del mercado. Revisa <span class="mono">importancia_variables.csv</span> si necesitas certeza.</div>
+      <div class="model-toggle-hint">"Sin cuotas" usa tu modelo XGBoost propio (<span class="mono">directo_calibrado</span>). Aviso: se entrenó con 409 variables que incluyen cuotas/mercado como una categoría más, así que puede no ser 100% independiente del mercado — y tu propio backtesting (<span class="mono">optimized_ensemble_weights</span> en metadata.json) le da un peso de 0% frente al 95% del modelo de mercado. Trátalo como referencia, no como la opción principal.</div>
 
       <div class="result-panel" id="resultPanel">
         <div class="result-headline" id="resultHeadline"></div>
@@ -1852,6 +1852,11 @@ async function parseNaturalBet(){
   // vez con IA (Groq) como respaldo — pero los nombres que devuelva la
   // IA se vuelven a pasar por resolveModelTeamName igualmente: la IA
   // nunca decide sola qué equipo es, solo ayuda a leer el texto.
+  // Si la IA de respaldo identifica un equipo pero de forma ambigua (ej.
+  // "Madrid" -> ¿Real Madrid o Atlético?), se guarda aquí para poder
+  // explicar el motivo real del fallo en vez de un genérico "no identificado".
+  let aiAmbiguous = null;
+
   if(!teamA || !teamB || !selection || !odd){
     out.className = "predict-status";
     out.textContent = "No lo he interpretado del todo con las reglas locales, probando con IA de respaldo…";
@@ -1869,6 +1874,10 @@ async function parseNaturalBet(){
           if(rA.name && rB.name){
             teamA = { officialName: rA.name, idx: 0 };
             teamB = { officialName: rB.name, idx: 1 };
+          } else if(rA.ambiguous){
+            aiAmbiguous = { raw: aiJson.home_team, candidates: rA.candidates };
+          } else if(rB.ambiguous){
+            aiAmbiguous = { raw: aiJson.away_team, candidates: rB.candidates };
           }
         }
         if(!selection && aiJson.selection) selection = aiJson.selection;
@@ -1881,7 +1890,9 @@ async function parseNaturalBet(){
 
   if(!teamA || !teamB){
     out.className = "predict-status err";
-    out.textContent = "No he identificado los dos equipos. Escríbelos con el nombre habitual o su apodo, ej: \"Real Madrid gana a Barcelona a cuota 1.85\".";
+    out.textContent = aiAmbiguous
+      ? `"${aiAmbiguous.raw}" es ambiguo, podría ser: ${aiAmbiguous.candidates.join(" / ")}. Escribe el nombre completo, ej. "Real Madrid" o "Atl. Madrid".`
+      : "No he identificado los dos equipos. Escríbelos con el nombre habitual o su apodo, ej: \"Real Madrid gana a Barcelona a cuota 1.85\".";
     return;
   }
   if(!selection){
@@ -2148,7 +2159,13 @@ async function loadRealFixtures(leagueId = 140, season = new Date().getFullYear(
           liga: "LaLiga",
           isoDate: ev.commence_time ? ev.commence_time.slice(0, 10) : null,
         };
-      }).sort((a, b) => (a.isoDate || "").localeCompare(b.isoDate || ""));
+      }).sort((a, b) => (a.isoDate || "").localeCompare(b.isoDate || ""))
+        // The Odds API no pagina por jornada como API-Football: devuelve
+        // TODOS los partidos con mercado abierto (a veces 2-3 jornadas de
+        // golpe). Se limita a 12 para que la lista sea manejable y para
+        // no disparar de más las llamadas del botón "Buscar oportunidades
+        // reales" (una llamada al modelo por partido).
+        .slice(0, 12);
       gotRealFixtures = true;
     } catch (err) {
       console.warn("Calendario en demo (tampoco hay partidos vía cuotas; motivo: " + err.message + ")");
