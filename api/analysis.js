@@ -1,20 +1,22 @@
 // Análisis en lenguaje natural de una predicción, usando la API
-// GRATUITA de Google Gemini (aistudio.google.com) en vez de OpenAI:
-// tiene un nivel gratuito permanente pensado justo para proyectos como
-// este (límite por minuto/día, sin necesidad de tarjeta).
+// GRATUITA de Groq (console.groq.com). Se usó Google Gemini al
+// principio, pero aistudio.google.com puede pedir verificación de edad
+// para crear una clave y bloquear el registro — Groq no lo pide,
+// funciona con una cuenta normal (email o login con Google/GitHub) y
+// tiene un nivel gratuito permanente pensado para proyectos como este.
 //
-// Variable de entorno requerida en Vercel: GEMINI_API_KEY
-//   1. Entra en https://aistudio.google.com/apikey
-//   2. Crea una clave gratuita ("Create API key")
+// Variable de entorno requerida en Vercel: GROQ_API_KEY
+//   1. Entra en https://console.groq.com/keys
+//   2. Crea una cuenta gratuita y pulsa "Create API Key"
 //   3. Pégala en Vercel → tu proyecto → Settings → Environment
-//      Variables → nombre GEMINI_API_KEY.
+//      Variables → nombre GROQ_API_KEY.
 //
 // El frontend (generateAIAnalysis en index.html) manda por POST el
 // último resultado de /api/predict ya resumido:
 //   { team1, team2, pHome, pDraw, pAway, xgHome, xgAway }
 // y espera de vuelta { analysis: "texto..." }.
 
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -22,10 +24,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido. Usa POST." });
   }
 
-  const API_KEY = process.env.GEMINI_API_KEY;
+  const API_KEY = process.env.GROQ_API_KEY;
   if (!API_KEY) {
     return res.status(500).json({
-      error: "Falta configurar GEMINI_API_KEY en las variables de entorno de Vercel. Consigue una clave gratuita en https://aistudio.google.com/apikey",
+      error: "Falta configurar GROQ_API_KEY en las variables de entorno de Vercel. Consigue una clave gratuita en https://console.groq.com/keys",
     });
   }
 
@@ -48,39 +50,41 @@ ${xgLine}
 Escribe un análisis breve en español (3-4 frases, sin listas ni markdown) explicando qué dice el modelo y por qué ese resultado es el más probable según estos números. No garantices resultados, no des consejos financieros, y recuerda en una frase corta al final que es una estimación probabilística, no una certeza.`;
 
   try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.6, maxOutputTokens: 300 },
-        }),
-      }
-    );
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.6,
+        max_tokens: 300,
+      }),
+    });
 
-    const text = await geminiRes.text();
+    const text = await groqRes.text();
     let data;
     try {
       data = JSON.parse(text);
     } catch {
-      return res.status(502).json({ error: `Respuesta no-JSON de Gemini (estado ${geminiRes.status}): ${text.slice(0, 300)}` });
+      return res.status(502).json({ error: `Respuesta no-JSON de Groq (estado ${groqRes.status}): ${text.slice(0, 300)}` });
     }
 
-    if (!geminiRes.ok) {
-      return res.status(geminiRes.status).json({
-        error: data.error?.message || `Gemini respondió con estado ${geminiRes.status}.`,
+    if (!groqRes.ok) {
+      return res.status(groqRes.status).json({
+        error: data.error?.message || `Groq respondió con estado ${groqRes.status}.`,
       });
     }
 
-    const analysis = data.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("").trim();
+    const analysis = data.choices?.[0]?.message?.content?.trim();
     if (!analysis) {
-      return res.status(502).json({ error: "Gemini no devolvió texto de análisis (puede haber bloqueado la respuesta por seguridad)." });
+      return res.status(502).json({ error: "Groq no devolvió texto de análisis." });
     }
 
     return res.status(200).json({ analysis });
   } catch (error) {
-    return res.status(502).json({ error: `No se pudo contactar con Gemini: ${error.message}` });
+    return res.status(502).json({ error: `No se pudo contactar con Groq: ${error.message}` });
   }
 }
