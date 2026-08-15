@@ -566,6 +566,7 @@
         <button class="btn secondary" onclick="scrollToId('analizador')">Analizar apuesta</button>
       </div>
       <div class="predict-status" id="predictStatus"></div>
+      <div class="odds-hint" id="resolvedTeamsNote"></div>
 
       <div class="model-toggle" id="modelToggle">
         <button type="button" class="model-toggle-btn active" data-model="mercado_temperatura" onclick="selectSubmodel('mercado_temperatura')">Con cuotas (mercado)</button>
@@ -957,8 +958,11 @@ async function loadModelTeams(){
 }
 
 // Resuelve el nombre que escribe el usuario al nombre exacto que
-// espera el modelo. Devuelve null si no encuentra un match razonable
-// (en vez de adivinar y mandar un nombre incorrecto al backend).
+// espera el modelo. Devuelve { name, ambiguous, candidates }.
+// - name: el nombre exacto a usar, o null si no se pudo resolver.
+// - ambiguous: true si el texto podría referirse a varios equipos
+//   distintos (ej. "Madrid" -> Real Madrid / Atl. Madrid) — en ese
+//   caso NUNCA adivinamos, mejor pedir que se escriba m\u00e1s concreto.
 function resolveModelTeamName(input){
   const key = normalizeKey(input);
 
@@ -966,22 +970,29 @@ function resolveModelTeamName(input){
     const aliasTarget = TEAM_ALIASES[key];
     if(MODEL_TEAMS_READY && !MODEL_TEAMS.includes(aliasTarget)){
       const fuzzy = MODEL_TEAMS.find(t => normalizeKey(t) === normalizeKey(aliasTarget));
-      return fuzzy || aliasTarget;
+      return { name: fuzzy || aliasTarget, ambiguous: false, candidates: [] };
     }
-    return aliasTarget;
+    return { name: aliasTarget, ambiguous: false, candidates: [] };
   }
 
   if(MODEL_TEAMS_READY){
     const exact = MODEL_TEAMS.find(t => normalizeKey(t) === key);
-    if(exact) return exact;
-    const partial = MODEL_TEAMS.find(t => normalizeKey(t).includes(key) || key.includes(normalizeKey(t)));
-    if(partial) return partial;
-    return null; // hay lista real y no matchea nada: mejor no adivinar
+    if(exact) return { name: exact, ambiguous: false, candidates: [] };
+
+    // Coincidencia parcial SOLO si es única. Si el texto encaja con
+    // más de un equipo (ej. "Madrid" encaja con "Real Madrid" Y con
+    // "Atl. Madrid"), no adivinamos: se marca como ambiguo.
+    const partials = MODEL_TEAMS.filter(t =>
+      normalizeKey(t).includes(key) || key.includes(normalizeKey(t))
+    );
+    if(partials.length === 1) return { name: partials[0], ambiguous: false, candidates: [] };
+    if(partials.length > 1) return { name: null, ambiguous: true, candidates: partials };
+    return { name: null, ambiguous: false, candidates: [] };
   }
 
   // Sin lista real todavía: dejamos pasar el nombre tal cual como
   // último recurso (el backend puede rechazarlo si no lo reconoce).
-  return input;
+  return { name: input, ambiguous: false, candidates: [] };
 }
 
 // Cuotas 1X2 para el payload: prioriza lo escrito a mano; si falta
@@ -1039,15 +1050,22 @@ async function predict(){
   statusEl.className = "predict-status";
   statusEl.textContent = "Consultando el modelo…";
 
-  const homeTeam = resolveModelTeamName(team1Raw);
-  const awayTeam = resolveModelTeamName(team2Raw);
+  const homeResolved = resolveModelTeamName(team1Raw);
+  const awayResolved = resolveModelTeamName(team2Raw);
 
-  if(!homeTeam || !awayTeam){
-    const unresolved = !homeTeam ? team1Raw : team2Raw;
+  if(!homeResolved.name || !awayResolved.name){
+    const bad = !homeResolved.name ? { raw: team1Raw, r: homeResolved } : { raw: team2Raw, r: awayResolved };
     statusEl.className = "predict-status err";
-    statusEl.textContent = `El modelo no reconoce "${unresolved}". Prueba con el nombre corto (ej. "Ath Bilbao", "Atl. Madrid", "Celta Vigo").`;
+    if(bad.r.ambiguous){
+      statusEl.textContent = `"${bad.raw}" es ambiguo, podría ser: ${bad.r.candidates.join(" / ")}. Escribe el nombre completo para que no se equivoque (ej. "Real Madrid" o "Atl. Madrid").`;
+    } else {
+      statusEl.textContent = `El modelo no reconoce "${bad.raw}". Prueba con el nombre corto (ej. "Ath Bilbao", "Atl. Madrid", "Celta Vigo").`;
+    }
     return;
   }
+
+  const homeTeam = homeResolved.name;
+  const awayTeam = awayResolved.name;
 
   const odds = getOddsInputs();
   if(odds.odds_h == null || odds.odds_d == null || odds.odds_a == null){
@@ -1093,6 +1111,15 @@ async function predict(){
 
     LAST_FULL_RESPONSE = json.data;
     LAST_TEAM_LABELS = { home: team1Raw, away: team2Raw };
+
+    const resolvedNote = [];
+    if(normalizeKey(homeTeam) !== normalizeKey(team1Raw)) resolvedNote.push(`"${team1Raw}" → ${homeTeam}`);
+    if(normalizeKey(awayTeam) !== normalizeKey(team2Raw)) resolvedNote.push(`"${team2Raw}" → ${awayTeam}`);
+    if(resolvedNote.length){
+      document.getElementById("resolvedTeamsNote").textContent = "Interpretado como: " + resolvedNote.join(" · ");
+    } else {
+      document.getElementById("resolvedTeamsNote").textContent = "";
+    }
     renderSelectedModel(CURRENT_SUBMODEL);
 
     statusEl.className = "predict-status ok";
