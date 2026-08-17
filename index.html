@@ -2169,7 +2169,7 @@ async function loadRealStandings(leagueId = 140, season = new Date().getFullYear
     `).join("");
 
     document.getElementById("standingsWrap").style.display = "block";
-    document.getElementById("statsSourceNote").textContent = "Clasificación en vivo vía API-Football.";
+    document.getElementById("statsSourceNote").textContent = `Clasificación en vivo vía ${data._source || "API-Football"}.`;
 
     STANDINGS_TABLE = table;
     renderStats(document.getElementById("team1")?.value, document.getElementById("team2")?.value);

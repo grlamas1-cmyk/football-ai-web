@@ -118,13 +118,13 @@ export default async function handler(req, res) {
   const fromFootballData = await fetchFromFootballData(leagueId);
   if (fromFootballData.ok) {
     res.setHeader("Cache-Control", "public, max-age=0, s-maxage=300, stale-while-revalidate=600");
-    return res.status(200).json(fromFootballData.data);
+    return res.status(200).json({ ...fromFootballData.data, _source: "football-data.org" });
   }
 
   const fromApiFootball = await fetchFromApiFootball(leagueId, seasonYear);
   if (fromApiFootball.ok) {
     res.setHeader("Cache-Control", "public, max-age=0, s-maxage=300, stale-while-revalidate=600");
-    return res.status(200).json(fromApiFootball.data);
+    return res.status(200).json({ ...fromApiFootball.data, _source: "API-Football" });
   }
 
   return res.status(502).json({
