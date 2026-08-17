@@ -1,0 +1,25 @@
+name: Comprobar sintaxis
+
+# Revisa que index.html y todas las funciones de api/ no tengan errores
+# de sintaxis (una llave o coma de más/menos al editar a mano) ANTES de
+# que lleguen a Vercel. No hace falta hacer nada para que esto corra:
+# GitHub lo ejecuta solo en cada "push" o Pull Request.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Comprobar sintaxis de index.html y api/*.js
+        run: node scripts/check-syntax.mjs

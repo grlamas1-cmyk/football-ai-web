@@ -16,7 +16,10 @@
 //   { team1, team2, pHome, pDraw, pAway, xgHome, xgAway }
 // y espera de vuelta { analysis: "texto..." }.
 
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+// Groq retiró llama-3.3-70b-versatile el 17-jun-2026. Modelo de
+// reemplazo recomendado por Groq (console.groq.com/docs/deprecations):
+// openai/gpt-oss-120b.
+const GROQ_MODEL = "openai/gpt-oss-120b";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
