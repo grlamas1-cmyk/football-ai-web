@@ -258,6 +258,12 @@
   .odds-row .field label{ font-size:11px; }
   @media (max-width:560px){ .odds-row{ grid-template-columns:1fr 1fr; } }
   .odds-hint{ font-size:12px; color:var(--text-muted); margin-top:8px; }
+  .advanced-markets{ margin-top:14px; border:1px solid var(--line); border-radius:3px; padding:12px 14px; }
+  .advanced-markets summary{ cursor:pointer; font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--gold-dim); }
+  .advanced-markets[open] summary{ margin-bottom:4px; }
+  .goal-markets-row{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:12px; }
+  .goal-markets-row .xg-item{ background:var(--surface-alt); border:1px solid var(--line); border-radius:3px; padding:10px 12px; font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+  .goal-markets-row .xg-item b{ display:block; font-family:var(--font-body); font-size:16px; color:var(--text); margin-top:4px; }
   .predict-status{
     font-size:12px; margin-top:12px; font-family:var(--font-mono);
     min-height:16px;
@@ -559,8 +565,35 @@
           <input id="oddsA" type="number" step="0.01" min="1" placeholder="auto">
         </div>
       </div>
-      <div class="odds-hint">Las cuotas se autocompletan con el comparador cuando están disponibles. Puedes sobrescribirlas a mano — el modelo seleccionado (<span class="mono">mercado_temperatura</span>) las necesita para predecir.</div>
+      <div class="odds-hint">Las cuotas se autocompletan con el comparador cuando están disponibles. Puedes sobrescribirlas a mano — el modelo "Con cuotas" las necesita para predecir (el modelo "Sin cuotas" no las usa, pero igualmente hacen falta para calcular el valor de la apuesta).</div>
       <span class="odds-source-tag" id="oddsSourceTag"></span>
+
+      <details class="advanced-markets">
+        <summary>Mercados de goles (opcional)</summary>
+        <div class="odds-hint" style="margin-top:8px">
+          Estas cuotas son opcionales. Si las rellenas, ayudan al modelo a afinar el 1X2 (usa el mercado de goles como señal extra).
+          Debajo del resultado verás además la probabilidad de más/menos de 2.5 goles y de que marquen los dos equipos, calculada
+          directamente con el modelo de goles esperados (Poisson) — no hace falta rellenar nada para verla.
+        </div>
+        <div class="odds-row">
+          <div class="field">
+            <label for="oddsO25">Cuota Más de 2.5 goles</label>
+            <input id="oddsO25" type="number" step="0.01" min="1" placeholder="opcional">
+          </div>
+          <div class="field">
+            <label for="oddsU25">Cuota Menos de 2.5 goles</label>
+            <input id="oddsU25" type="number" step="0.01" min="1" placeholder="opcional">
+          </div>
+          <div class="field">
+            <label for="oddsBttsY">Cuota Ambos marcan: Sí</label>
+            <input id="oddsBttsY" type="number" step="0.01" min="1" placeholder="opcional">
+          </div>
+          <div class="field">
+            <label for="oddsBttsN">Cuota Ambos marcan: No</label>
+            <input id="oddsBttsN" type="number" step="0.01" min="1" placeholder="opcional">
+          </div>
+        </div>
+      </details>
 
       <div class="predict-actions">
         <button class="btn" onclick="predict()">Predecir resultado</button>
@@ -571,15 +604,16 @@
       <div class="odds-hint" id="predictNotices" style="color:var(--danger)"></div>
 
       <div class="model-toggle" id="modelToggle">
-        <button type="button" class="model-toggle-btn active" data-model="mercado_temperatura" onclick="selectSubmodel('mercado_temperatura')">Con cuotas (mercado)</button>
-        <button type="button" class="model-toggle-btn" data-model="directo_calibrado" onclick="selectSubmodel('directo_calibrado')">Sin cuotas (modelo propio)</button>
+        <button type="button" class="model-toggle-btn active" data-model="con_cuotas" onclick="selectSubmodel('con_cuotas')">Con cuotas (mercado)</button>
+        <button type="button" class="model-toggle-btn" data-model="sin_cuotas" onclick="selectSubmodel('sin_cuotas')">Sin cuotas (independiente)</button>
       </div>
-      <div class="model-toggle-hint">"Sin cuotas" usa tu modelo XGBoost propio (<span class="mono">directo_calibrado</span>). Aviso: se entrenó con 409 variables que incluyen cuotas/mercado como una categoría más, así que puede no ser 100% independiente del mercado — y tu propio backtesting (<span class="mono">optimized_ensemble_weights</span> en metadata.json) le da un peso de 0% frente al 95% del modelo de mercado. Trátalo como referencia, no como la opción principal.</div>
+      <div class="model-toggle-hint">"Sin cuotas" es un modelo entrenado desde cero SIN ninguna de las variables de mercado (ni las cuotas, ni nada derivado de ellas) — pensado para comparar contra la casa de apuestas sin usar su propia información. Es normal que acierte algo menos que "Con cuotas": el mercado sí contiene información real, y este modelo renuncia a ella a propósito. Accuracy/log loss de referencia: con cuotas 54.9% / 0.946 — sin cuotas 52.8% / 0.977 (mismo test, ver metadata.json).</div>
 
       <div class="result-panel" id="resultPanel">
         <div class="result-headline" id="resultHeadline"></div>
         <div class="prob-bars" id="probBars"></div>
         <div class="xg-row" id="xgRow"></div>
+        <div class="goal-markets-row" id="goalMarketsRow"></div>
         <div class="predict-actions">
           <button class="btn secondary" id="aiButton" onclick="generateAIAnalysis()">✦ Generar análisis con IA</button>
         </div>
@@ -933,7 +967,12 @@ async function scanRealValueBets(){
       const json = await res.json();
       if(!res.ok || json.ok === false) continue;
 
-      const probs = json.data.probabilities;
+      // OJO: se usa el modelo "sin_cuotas" (independiente) a propósito,
+      // no "con_cuotas". Comparar el mercado contra un modelo que ya
+      // está construido a partir del propio mercado sería circular — el
+      // "valor" real solo se puede detectar con una estimación que no
+      // haya visto las cuotas de ninguna casa.
+      const probs = json.data.sin_cuotas.probabilities;
       VALUE_DATA.push({
         fixture,
         outcomes: [
@@ -1282,6 +1321,52 @@ function getOddsInputs(){
   return { odds_h, odds_d, odds_a };
 }
 
+// Cuotas opcionales de mercados de goles (Más/Menos 2.5, Ambos marcan).
+// Si el usuario las rellena, el backend las usa como señal extra para
+// afinar el 1X2. Si no, simplemente no se mandan (son opcionales en
+// PredictionRequest). No hay "auto" aquí: si no las escribes, no se
+// inventan a partir de otra cosa.
+function getOptionalGoalMarketOdds(){
+  const parse = id => {
+    const v = parseFloat(document.getElementById(id).value);
+    return Number.isFinite(v) && v > 1 ? v : null;
+  };
+  const payload = {};
+  const o25 = parse("oddsO25"); if(o25 != null) payload.odds_o25 = o25;
+  const u25 = parse("oddsU25"); if(u25 != null) payload.odds_u25 = u25;
+  const bttsy = parse("oddsBttsY"); if(bttsy != null) payload.odds_bttsy = bttsy;
+  const bttsn = parse("oddsBttsN"); if(bttsn != null) payload.odds_bttsn = bttsn;
+  return payload;
+}
+
+// Pinta las probabilidades de goles (Over/Under 2.5, BTTS) que ya
+// vienen en la respuesta del backend (goal_markets), calculadas con el
+// modelo de Poisson que ya usa la web. Si el usuario escribió una cuota
+// para ese mercado en "Mercados de goles (opcional)", se muestra
+// también el edge frente a esa cuota, reutilizando la misma fórmula que
+// el analizador de apuestas principal.
+function goalMarketItem(label, prob, oddInputId){
+  const oddVal = parseFloat(document.getElementById(oddInputId)?.value);
+  let edgeHtml = "";
+  if(Number.isFinite(oddVal) && oddVal > 1){
+    const implied = 1 / oddVal;
+    const edge = (prob - implied) * 100;
+    edgeHtml = ` <span style="color:var(${edge > 0 ? "--success" : "--danger"})">${edge >= 0 ? "+" : ""}${edge.toFixed(1)}% edge</span>`;
+  }
+  return `<div class="xg-item">${label}<b>${Math.round(prob * 100)}%${edgeHtml}</b></div>`;
+}
+
+function renderGoalMarkets(goalMarkets){
+  const el = document.getElementById("goalMarketsRow");
+  if(!el) return;
+  if(!goalMarkets){ el.innerHTML = ""; return; }
+  el.innerHTML =
+    goalMarketItem("Más de 2.5 goles", goalMarkets.over_25, "oddsO25") +
+    goalMarketItem("Menos de 2.5 goles", goalMarkets.under_25, "oddsU25") +
+    goalMarketItem("Ambos marcan: Sí", goalMarkets.btts_yes, "oddsBttsY") +
+    goalMarketItem("Ambos marcan: No", goalMarkets.btts_no, "oddsBttsN");
+}
+
 // Temporada europea (agosto→mayo) a partir de una fecha ISO.
 function seasonFromDate(isoDate){
   const d = new Date(isoDate);
@@ -1303,6 +1388,7 @@ async function predict(){
     document.getElementById("resultHeadline").textContent = "Introduce ambos equipos para generar la predicción.";
     document.getElementById("probBars").innerHTML = "";
     document.getElementById("xgRow").innerHTML = "";
+    document.getElementById("goalMarketsRow").innerHTML = "";
     statusEl.textContent = "";
     return;
   }
@@ -1311,6 +1397,7 @@ async function predict(){
   document.getElementById("resultHeadline").textContent = `${team1Raw} vs ${team2Raw}`;
   document.getElementById("probBars").innerHTML = "";
   document.getElementById("xgRow").innerHTML = "";
+  document.getElementById("goalMarketsRow").innerHTML = "";
   renderNotices(null);
   statusEl.className = "predict-status";
   statusEl.textContent = "Consultando el modelo…";
@@ -1337,7 +1424,7 @@ async function predict(){
   const odds = getOddsInputs();
   if(odds.odds_h == null || odds.odds_d == null || odds.odds_a == null){
     statusEl.className = "predict-status err";
-    statusEl.textContent = "Faltan cuotas 1X2 (el modelo mercado_temperatura las necesita). Escríbelas a mano o carga primero el comparador de cuotas.";
+    statusEl.textContent = "Faltan cuotas 1X2 (el modelo \"Con cuotas\" las necesita, y el backend siempre calcula los 2 modelos a la vez). Escríbelas a mano o carga primero el comparador de cuotas.";
     return;
   }
 
@@ -1362,6 +1449,7 @@ async function predict(){
     odds_h: odds.odds_h,
     odds_d: odds.odds_d,
     odds_a: odds.odds_a,
+    ...getOptionalGoalMarketOdds(),
   };
 
   try {
@@ -1414,17 +1502,18 @@ async function predict(){
   }
 }
 
-// Guarda la última respuesta completa del backend (incluye
-// all_model_probabilities) para poder cambiar de submodelo sin volver
-// a llamar a la API.
+// Guarda la última respuesta completa del backend (con_cuotas y
+// sin_cuotas, cada uno con sus propias probabilidades/goles esperados)
+// para poder cambiar de modelo sin volver a llamar a la API.
 let LAST_FULL_RESPONSE = null;
 let LAST_TEAM_LABELS = null;
-let CURRENT_SUBMODEL = "mercado_temperatura";
+let CURRENT_SUBMODEL = "con_cuotas";
 
 
-// Pinta en pantalla las probabilidades del submodelo elegido (key),
-// usando los datos ya guardados en LAST_FULL_RESPONSE. No hace
-// ninguna llamada nueva a la API.
+// Pinta en pantalla las probabilidades del modelo elegido (key: "con_cuotas"
+// o "sin_cuotas"), usando los datos ya guardados en LAST_FULL_RESPONSE.
+// No hace ninguna llamada nueva a la API: el backend ya devuelve los 2
+// modelos completos en cada predicción.
 function renderSelectedModel(key){
   if(!LAST_FULL_RESPONSE || !LAST_TEAM_LABELS) return;
   CURRENT_SUBMODEL = key;
@@ -1433,15 +1522,12 @@ function renderSelectedModel(key){
     btn.classList.toggle("active", btn.dataset.model === key);
   });
 
-  const isSelectedModel = key === LAST_FULL_RESPONSE.selected_model;
-  const probs = isSelectedModel
-    ? LAST_FULL_RESPONSE.probabilities
-    : LAST_FULL_RESPONSE.all_model_probabilities?.[key];
-
-  if(!probs){
-    document.getElementById("predictStatus").textContent = `El backend no devolvió probabilidades para "${key}".`;
+  const modelResult = LAST_FULL_RESPONSE[key];
+  if(!modelResult){
+    document.getElementById("predictStatus").textContent = `El backend no devolvió datos para "${key}".`;
     return;
   }
+  const probs = modelResult.probabilities;
 
   const pHome = Math.round(probs.H * 100);
   const pDraw = Math.round(probs.D * 100);
@@ -1455,7 +1541,7 @@ function renderSelectedModel(key){
       ? `${team2Raw} parte como favorito`
       : "Encuentro muy igualado, empate probable";
 
-  const modelTag = key === "mercado_temperatura" ? "con cuotas de mercado" : "modelo propio, sin cuotas";
+  const modelTag = key === "con_cuotas" ? "con cuotas de mercado" : "independiente, sin cuotas";
   document.getElementById("resultHeadline").textContent = `${team1Raw} vs ${team2Raw} — ${favorite} (${modelTag})`;
   document.getElementById("probBars").innerHTML = `
     ${probRow(team1Raw, pHome)}
@@ -1463,12 +1549,13 @@ function renderSelectedModel(key){
     ${probRow(team2Raw, pAway)}
   `;
 
-  const xgHome = LAST_FULL_RESPONSE.expected_goals?.home ?? null;
-  const xgAway = LAST_FULL_RESPONSE.expected_goals?.away ?? null;
+  const xgHome = modelResult.expected_goals?.home ?? null;
+  const xgAway = modelResult.expected_goals?.away ?? null;
   document.getElementById("xgRow").innerHTML = (xgHome != null && xgAway != null) ? `
     <div class="xg-item">Goles esperados (local)<b>${Number(xgHome).toFixed(2)}</b></div>
     <div class="xg-item">Goles esperados (visitante)<b>${Number(xgAway).toFixed(2)}</b></div>
   ` : "";
+  renderGoalMarkets(modelResult.goal_markets);
 
   const topProb = Math.max(pHome, pDraw, pAway);
   document.getElementById("probInput").value = topProb;
@@ -1940,7 +2027,11 @@ async function parseNaturalBet(){
     const json = await res.json();
     if(!res.ok || json.ok === false) throw new Error(json.error || "Error del backend");
 
-    const probs = json.data.probabilities;
+    // Igual que en el escáner de valor: se usa el modelo "sin_cuotas"
+    // (independiente) para juzgar la apuesta, no "con_cuotas" — si no,
+    // estaríamos comparando la cuota de la casa contra un modelo que ya
+    // se apoya en las cuotas del mercado, y nunca detectaría valor real.
+    const probs = json.data.sin_cuotas.probabilities;
     const p = selection === "home" ? probs.H : selection === "away" ? probs.A : probs.D;
     const pPct = Math.round(p * 100);
 
