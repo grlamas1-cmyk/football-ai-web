@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partidos — Football Analytics Pro</title>
+<meta name="description" content="Próximos partidos reales de LaLiga: elige uno y consigue su predicción completa al instante.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="partidos.html" class="active">Partidos</a>
+      <a href="cuotas.html">Cuotas</a>
+      <a href="alertas.html">Alertas</a>
+      <a href="analizador.html">Analizador</a>
+      <a href="estadisticas.html">Estadísticas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="ticker-outer">
+  <div class="ticker-track" id="tickerTrack"><span>Cargando próximos partidos de LaLiga…</span></div>
+</div>
+
+<div class="wrap">
+  <div class="page-header">
+    <div class="eyebrow">Solo LaLiga · Solo partidos reales</div>
+    <h1>Próximos partidos</h1>
+    <p class="lead">Elige un partido de la lista para ver su informe completo — predicción, análisis con IA y mercados de goles — ya con las cuotas reales cargadas. No se predicen partidos que no se vayan a jugar.</p>
+  </div>
+</div>
+
+<section class="section" style="border-top:none; padding-top:20px;">
+  <div class="wrap">
+
+    <div class="match-detail" id="matchDetail">
+      <div class="match-detail-head">
+        <div>
+          <h3 id="matchDetailTitle">—</h3>
+          <div class="odds-hint" id="matchDetailMeta"></div>
+        </div>
+        <button class="match-detail-close" onclick="closeMatch()">Cerrar ✕</button>
+      </div>
+
+      <span class="odds-source-tag" id="oddsSourceTag"></span>
+      <div class="predict-status" id="predictStatus"></div>
+      <div class="odds-hint" id="predictNotices" style="color:var(--danger)"></div>
+
+      <div class="model-toggle" id="modelToggle">
+        <button type="button" class="model-toggle-btn active" data-model="con_cuotas" onclick="selectSubmodel('con_cuotas')">Con cuotas (mercado)</button>
+        <button type="button" class="model-toggle-btn" data-model="sin_cuotas" onclick="selectSubmodel('sin_cuotas')">Sin cuotas (independiente)</button>
+      </div>
+      <div class="model-toggle-hint">"Sin cuotas" es un modelo entrenado desde cero sin ninguna variable de mercado — pensado para comparar contra la casa de apuestas sin usar su propia información. Es normal que acierte algo menos que "Con cuotas": el mercado sí contiene información real.</div>
+
+      <div class="result-panel visible">
+        <div class="prob-bars" id="probBars"></div>
+        <div class="xg-row" id="xgRow"></div>
+        <div class="goal-markets-row" id="goalMarketsRow"></div>
+        <div class="predict-actions">
+          <button class="btn secondary" id="aiButton" onclick="generateAIAnalysis()">✦ Generar análisis con IA</button>
+          <a class="btn secondary" href="cuotas.html" id="oddsLink">Ver comparador de cuotas →</a>
+          <a class="btn secondary" href="alertas.html">Buscar valor en todos los partidos →</a>
+        </div>
+        <div class="ai-analysis" id="aiAnalysis">
+          <span class="ai-label">Análisis generado por IA</span>
+          <span id="aiAnalysisText"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="fixturesList"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="logo"><span class="mark"></span> Football Analytics Pro</div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Herramientas</h4>
+          <a href="partidos.html">Partidos</a>
+          <a href="cuotas.html">Comparador de cuotas</a>
+          <a href="alertas.html">Alertas de valor</a>
+          <a href="analizador.html">Analizador</a>
+        </div>
+        <div class="footer-col">
+          <h4>Información</h4>
+          <a href="estadisticas.html">Estadísticas</a>
+          <a href="index.html">Inicio</a>
+        </div>
+      </div>
+    </div>
+    <div class="responsible">
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+    </div>
+  </div>
+</footer>
+
+<script src="common.js"></script>
+<script>
+let CURRENT_MATCH = null;
+let LAST_FULL_RESPONSE = null;
+let LAST_PREDICTION = null;
+let CURRENT_SUBMODEL = "con_cuotas";
+
+function renderTicker(){
+  const track = document.getElementById("tickerTrack");
+  if(!track) return;
+  const items = DEMO_FIXTURES.length > 0
+    ? DEMO_FIXTURES.map(f => `<b>${f.home}</b> vs ${f.away} — ${f.comp} · ${f.time}`)
+    : [`Sin partidos próximos disponibles ahora mismo.`];
+  const html = items.map(i => `<span>${i}</span>`).join("");
+  track.innerHTML = html + html;
+}
+
+function renderFixturesList(){
+  const el = document.getElementById("fixturesList");
+  if(DEMO_FIXTURES.length === 0){
+    el.innerHTML = `<div class="alerts-empty">No se han podido cargar los próximos partidos reales de LaLiga. Vuelve a intentarlo en unos minutos.</div>`;
+    return;
+  }
+  el.innerHTML = DEMO_FIXTURES.map((f, i) => `
+    <div class="fixture" role="button" tabindex="0" data-idx="${i}"
+         onclick="openMatchByIndex(${i})" onkeypress="if(event.key==='Enter') openMatchByIndex(${i})">
+      <div class="time">${f.time}<br>${f.comp}</div>
+      <div class="teams">${f.home} — ${f.away}</div>
+      <div class="cta">Ver informe →</div>
+    </div>
+  `).join("");
+}
+
+function openMatchByIndex(i){ openMatch(DEMO_FIXTURES[i], i); }
+
+function closeMatch(){
+  document.getElementById("matchDetail").classList.remove("visible");
+  document.querySelectorAll(".fixture.active").forEach(el => el.classList.remove("active"));
+  CURRENT_MATCH = null;
+}
+
+async function openMatch(fixture, idx){
+  CURRENT_MATCH = fixture;
+  CURRENT_SUBMODEL = "con_cuotas";
+  LAST_FULL_RESPONSE = null;
+
+  document.querySelectorAll(".fixture").forEach(el => el.classList.remove("active"));
+  if(idx != null) document.querySelector(`.fixture[data-idx="${idx}"]`)?.classList.add("active");
+
+  const panel = document.getElementById("matchDetail");
+  panel.classList.add("visible");
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  document.getElementById("matchDetailTitle").textContent = `${fixture.home} vs ${fixture.away}`;
+  document.getElementById("matchDetailMeta").textContent = `${fixture.comp} · ${fixture.time}`;
+  document.getElementById("oddsLink").href = `cuotas.html?home=${encodeURIComponent(fixture.home)}&away=${encodeURIComponent(fixture.away)}`;
+  document.getElementById("predictStatus").className = "predict-status";
+  document.getElementById("predictStatus").textContent = "Buscando cuotas reales…";
+  document.getElementById("oddsSourceTag").className = "odds-source-tag";
+  document.getElementById("oddsSourceTag").textContent = "";
+  document.getElementById("probBars").innerHTML = "";
+  document.getElementById("xgRow").innerHTML = "";
+  document.getElementById("goalMarketsRow").innerHTML = "";
+  document.getElementById("predictNotices").textContent = "";
+  document.getElementById("aiAnalysis").classList.remove("visible");
+  document.getElementById("aiAnalysisText").textContent = "";
+  document.querySelectorAll(".model-toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.model === "con_cuotas"));
+
+  const homeR = resolveModelTeamName(fixture.home);
+  const awayR = resolveModelTeamName(fixture.away);
+  if(!homeR.name || !awayR.name){
+    const bad = !homeR.name ? fixture.home : fixture.away;
+    document.getElementById("predictStatus").className = "predict-status err";
+    document.getElementById("predictStatus").textContent = `El modelo no tiene datos suficientes para "${bad}" todavía, así que no se puede predecir este partido con fiabilidad.`;
+    return;
+  }
+
+  await loadRealOdds(fixture.home, fixture.away, SPORT_KEY);
+  const odds = getOddsInputs();
+  const tag = document.getElementById("oddsSourceTag");
+  if(ODDS_SOURCE === "live"){
+    tag.className = "odds-source-tag live";
+    tag.textContent = "● Cuotas reales";
+  } else {
+    tag.className = "odds-source-tag demo";
+    tag.textContent = "● Sin cuotas reales todavía para este partido";
+  }
+
+  if(odds.odds_h == null || odds.odds_d == null || odds.odds_a == null || ODDS_SOURCE !== "live"){
+    document.getElementById("predictStatus").className = "predict-status err";
+    document.getElementById("predictStatus").textContent = "Todavía no hay cuotas reales de mercado para este partido (los proveedores suelen abrirlas pocos días antes). Vuelve a intentarlo más tarde.";
+    return;
+  }
+
+  document.getElementById("predictStatus").textContent = "Consultando el modelo…";
+  const matchDate = fixture.isoDate || new Date().toISOString().slice(0, 10);
+
+  try {
+    const res = await fetch("/api/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        home_team: homeR.name,
+        away_team: awayR.name,
+        match_date: matchDate,
+        season: seasonFromDate(matchDate),
+        odds_h: odds.odds_h,
+        odds_d: odds.odds_d,
+        odds_a: odds.odds_a,
+      }),
+    });
+    const json = await res.json();
+    if(!res.ok || json.ok === false) throw new Error(json.error || "Error del backend");
+
+    LAST_FULL_RESPONSE = json.data;
+    document.getElementById("predictStatus").className = "predict-status ok";
+    document.getElementById("predictStatus").textContent = `✓ Modelo real · ${new Date().toLocaleTimeString("es-ES")}`;
+    renderNoticesBox(json.data.notices);
+    renderSelectedModel(CURRENT_SUBMODEL);
+  } catch (err) {
+    document.getElementById("predictStatus").className = "predict-status err";
+    document.getElementById("predictStatus").textContent = `No se pudo conectar con el modelo (${err.message}).`;
+  }
+}
+
+function renderNoticesBox(notices){
+  const el = document.getElementById("predictNotices");
+  if(!Array.isArray(notices) || notices.length === 0){ el.textContent = ""; return; }
+  el.textContent = "⚠ " + notices.join(" · ");
+}
+
+function selectSubmodel(key){
+  CURRENT_SUBMODEL = key;
+  document.querySelectorAll(".model-toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.model === key));
+  if(LAST_FULL_RESPONSE) renderSelectedModel(key);
+}
+
+function probRow(label, value){
+  return `
+    <div class="prob-row">
+      <div class="label">${label}</div>
+      <div class="prob-track"><div class="prob-fill" style="width:${value}%"></div></div>
+      <div class="prob-value">${value}%</div>
+    </div>
+  `;
+}
+
+function renderSelectedModel(key){
+  if(!LAST_FULL_RESPONSE || !CURRENT_MATCH) return;
+  const modelResult = LAST_FULL_RESPONSE[key];
+  if(!modelResult) return;
+
+  const probs = modelResult.probabilities;
+  const pHome = Math.round(probs.H * 100);
+  const pDraw = Math.round(probs.D * 100);
+  const pAway = Math.round(probs.A * 100);
+
+  document.getElementById("probBars").innerHTML = `
+    ${probRow(CURRENT_MATCH.home, pHome)}
+    ${probRow("Empate", pDraw)}
+    ${probRow(CURRENT_MATCH.away, pAway)}
+  `;
+
+  const xgHome = modelResult.expected_goals?.home ?? null;
+  const xgAway = modelResult.expected_goals?.away ?? null;
+  document.getElementById("xgRow").innerHTML = (xgHome != null && xgAway != null) ? `
+    <div class="xg-item">Goles esperados (local)<b>${Number(xgHome).toFixed(2)}</b></div>
+    <div class="xg-item">Goles esperados (visitante)<b>${Number(xgAway).toFixed(2)}</b></div>
+  ` : "";
+
+  const gm = modelResult.goal_markets;
+  document.getElementById("goalMarketsRow").innerHTML = gm ? [
+    ["Más de 2.5 goles", gm.over_25], ["Menos de 2.5 goles", gm.under_25],
+    ["Ambos marcan: Sí", gm.btts_yes], ["Ambos marcan: No", gm.btts_no],
+  ].map(([label, p]) => `<div class="xg-item">${label}<b>${Math.round(p * 100)}%</b></div>`).join("") : "";
+
+  LAST_PREDICTION = { team1: CURRENT_MATCH.home, team2: CURRENT_MATCH.away, pHome, pDraw, pAway, xgHome, xgAway };
+  document.getElementById("aiAnalysis").classList.remove("visible");
+  document.getElementById("aiAnalysisText").textContent = "";
+  document.getElementById("aiButton").disabled = false;
+  document.getElementById("aiButton").textContent = "✦ Generar análisis con IA";
+}
+
+async function generateAIAnalysis(){
+  if(!LAST_PREDICTION) return;
+  const btn = document.getElementById("aiButton");
+  const box = document.getElementById("aiAnalysis");
+  const textEl = document.getElementById("aiAnalysisText");
+
+  btn.disabled = true;
+  btn.textContent = "Generando…";
+  box.classList.add("visible");
+  textEl.textContent = "Consultando el modelo…";
+
+  try {
+    const res = await fetch("/api/analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(LAST_PREDICTION),
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || "Error desconocido");
+    textEl.textContent = data.analysis;
+    btn.textContent = "✦ Regenerar análisis";
+  } catch (err) {
+    textEl.textContent = "No se pudo generar el análisis (" + err.message + "). Comprueba que GROQ_API_KEY esté configurada en Vercel.";
+    btn.textContent = "✦ Generar análisis con IA";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+(async () => {
+  await loadModelTeams();
+  await loadRealFixtures(LEAGUE_ID, SEASON);
+  renderTicker();
+  renderFixturesList();
+
+  const params = new URLSearchParams(location.search);
+  const homeParam = params.get("home"), awayParam = params.get("away");
+  if(homeParam && awayParam){
+    const idx = DEMO_FIXTURES.findIndex(f => f.home === homeParam && f.away === awayParam);
+    if(idx !== -1) openMatch(DEMO_FIXTURES[idx], idx);
+  }
+})();
+</script>
+</body>
+</html>

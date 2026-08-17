@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparador de cuotas — Football Analytics Pro</title>
+<meta name="description" content="Compara las cuotas reales de varias casas de apuestas para los próximos partidos de LaLiga.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="partidos.html">Partidos</a>
+      <a href="cuotas.html" class="active">Cuotas</a>
+      <a href="alertas.html">Alertas</a>
+      <a href="analizador.html">Analizador</a>
+      <a href="estadisticas.html">Estadísticas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="page-header">
+    <div class="eyebrow">Comparador de cuotas</div>
+    <h1>Encuentra la mejor cuota antes de apostar</h1>
+    <p class="lead">Elige un partido real de LaLiga y compara las cuotas de varias casas. La casilla en verde marca la mejor cuota disponible para cada resultado.</p>
+  </div>
+</div>
+
+<section class="section" style="border-top:none; padding-top:20px;">
+  <div class="wrap">
+
+    <div class="filters-bar">
+      <div class="field" style="min-width:280px">
+        <label for="matchSelect">Partido</label>
+        <select id="matchSelect" onchange="onMatchChange()"></select>
+      </div>
+    </div>
+
+    <div id="oddsContent">
+      <div class="alerts-empty">Cargando próximos partidos…</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="logo"><span class="mark"></span> Football Analytics Pro</div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Herramientas</h4>
+          <a href="partidos.html">Partidos</a>
+          <a href="cuotas.html">Comparador de cuotas</a>
+          <a href="alertas.html">Alertas de valor</a>
+          <a href="analizador.html">Analizador</a>
+        </div>
+        <div class="footer-col">
+          <h4>Información</h4>
+          <a href="estadisticas.html">Estadísticas</a>
+          <a href="index.html">Inicio</a>
+        </div>
+      </div>
+    </div>
+    <div class="responsible">
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+    </div>
+  </div>
+</footer>
+
+<script src="common.js"></script>
+<script>
+let ACTIVE_BOOKIE_NAMES = new Set();
+
+function populateMatchSelect(){
+  const select = document.getElementById("matchSelect");
+  if(DEMO_FIXTURES.length === 0){
+    select.innerHTML = `<option>Sin partidos disponibles</option>`;
+    return;
+  }
+  select.innerHTML = DEMO_FIXTURES.map((f, i) =>
+    `<option value="${i}">${f.home} — ${f.away} (${f.time})</option>`
+  ).join("");
+}
+
+function onMatchChange(){
+  const idx = parseInt(document.getElementById("matchSelect").value, 10);
+  const fixture = DEMO_FIXTURES[idx];
+  if(fixture) loadAndRenderOdds(fixture);
+}
+
+async function loadAndRenderOdds(fixture){
+  document.getElementById("oddsContent").innerHTML = `<div class="alerts-empty">Cargando cuotas reales…</div>`;
+  await loadRealOdds(fixture.home, fixture.away, SPORT_KEY);
+
+  if(ODDS_SOURCE !== "live" || ODDS_ROWS.length === 0){
+    document.getElementById("oddsContent").innerHTML = `
+      <div class="alerts-empty">Todavía no hay cuotas reales de mercado para <b>${fixture.home} — ${fixture.away}</b>. Los proveedores suelen abrir las cuotas pocos días antes del partido — vuelve a intentarlo más tarde.</div>
+    `;
+    return;
+  }
+
+  ACTIVE_BOOKIE_NAMES = new Set(ODDS_ROWS.map(r => r.name));
+
+  document.getElementById("oddsContent").innerHTML = `
+    <div class="filters-bar">
+      <div class="field" style="min-width:220px">
+        <label>Filtrar casas de apuestas</label>
+        <div class="chip-group" id="bookieFilters"></div>
+      </div>
+    </div>
+    <div class="odds-table-wrap">
+      <table>
+        <thead>
+          <tr><th>Casa de apuestas</th><th>1 (Local)</th><th>X (Empate)</th><th>2 (Visitante)</th></tr>
+        </thead>
+        <tbody id="oddsBody"></tbody>
+      </table>
+    </div>
+    <div class="arb-banner" id="arbBanner"></div>
+  `;
+
+  renderBookieFilters();
+  renderOddsTable();
+}
+
+function renderBookieFilters(){
+  document.getElementById("bookieFilters").innerHTML = ODDS_ROWS.map(r => `
+    <label class="chip active" data-bookie="${r.name}">
+      <input type="checkbox" checked onchange="toggleBookie('${r.name}', this.checked)">
+      <span class="dot"></span>${r.name}
+    </label>
+  `).join("");
+}
+
+function toggleBookie(name, checked){
+  if(checked){ ACTIVE_BOOKIE_NAMES.add(name); } else { ACTIVE_BOOKIE_NAMES.delete(name); }
+  document.querySelector(`.chip[data-bookie="${name}"]`)?.classList.toggle("active", checked);
+  renderOddsTable();
+}
+
+function renderOddsTable(){
+  const rows = ODDS_ROWS.filter(r => ACTIVE_BOOKIE_NAMES.has(r.name));
+  if(rows.length === 0){
+    document.getElementById("oddsBody").innerHTML = `<tr><td colspan="4" style="font-family:var(--font-body); color:var(--text-muted)">Selecciona al menos una casa de apuestas.</td></tr>`;
+    document.getElementById("arbBanner").className = "arb-banner inactive";
+    document.getElementById("arbBanner").textContent = "Sin datos suficientes para calcular el arbitraje.";
+    return;
+  }
+
+  const bestHome = Math.max(...rows.map(r => r.home));
+  const bestDraw = Math.max(...rows.map(r => r.draw));
+  const bestAway = Math.max(...rows.map(r => r.away));
+
+  document.getElementById("oddsBody").innerHTML = rows.map(r => `
+    <tr>
+      <td class="bookie">${r.name}</td>
+      <td class="${r.home === bestHome ? 'best' : ''}">${r.home.toFixed(2)}</td>
+      <td class="${r.draw === bestDraw ? 'best' : ''}">${r.draw.toFixed(2)}</td>
+      <td class="${r.away === bestAway ? 'best' : ''}">${r.away.toFixed(2)}</td>
+    </tr>
+  `).join("");
+
+  const arbSum = (1 / bestHome) + (1 / bestDraw) + (1 / bestAway);
+  const banner = document.getElementById("arbBanner");
+  if(arbSum < 1){
+    const margin = ((1 - arbSum) * 100).toFixed(2);
+    banner.className = "arb-banner active";
+    banner.textContent = `Oportunidad de arbitraje detectada combinando las mejores cuotas: margen teórico +${margin}%.`;
+  } else {
+    const margin = ((arbSum - 1) * 100).toFixed(2);
+    banner.className = "arb-banner inactive";
+    banner.textContent = `Sin arbitraje disponible con estas cuotas. Margen de la casa sobre el mercado: ${margin}%.`;
+  }
+}
+
+(async () => {
+  await loadRealFixtures(LEAGUE_ID, SEASON);
+  populateMatchSelect();
+
+  if(DEMO_FIXTURES.length === 0) return;
+
+  const params = new URLSearchParams(location.search);
+  const homeParam = params.get("home"), awayParam = params.get("away");
+  let idx = 0;
+  if(homeParam && awayParam){
+    const found = DEMO_FIXTURES.findIndex(f => f.home === homeParam && f.away === awayParam);
+    if(found !== -1) idx = found;
+  }
+  document.getElementById("matchSelect").value = idx;
+  loadAndRenderOdds(DEMO_FIXTURES[idx]);
+})();
+</script>
+</body>
+</html>

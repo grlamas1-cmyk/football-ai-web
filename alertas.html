@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alertas de valor — Football Analytics Pro</title>
+<meta name="description" content="Escanea los próximos partidos reales de LaLiga y encuentra dónde el modelo independiente ve más valor que las casas de apuestas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="partidos.html">Partidos</a>
+      <a href="cuotas.html">Cuotas</a>
+      <a href="alertas.html" class="active">Alertas</a>
+      <a href="analizador.html">Analizador</a>
+      <a href="estadisticas.html">Estadísticas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="page-header">
+    <div class="eyebrow">Alertas de valor</div>
+    <h1>Partidos donde el modelo detecta ventaja frente al mercado</h1>
+    <p class="lead">Comparamos la probabilidad del modelo <b>independiente</b> (que nunca ve las cuotas) con la probabilidad implícita en la cuota real de cada casa, para cada próximo partido de LaLiga. Ajusta el margen mínimo para ver solo lo que te interesa.</p>
+  </div>
+</div>
+
+<section class="section" style="border-top:none; padding-top:20px;">
+  <div class="wrap">
+
+    <div class="predict-actions">
+      <button class="btn" id="scanValueBtn" onclick="scanRealValueBets()">Buscar oportunidades reales</button>
+      <span class="odds-hint" id="alertsProgress"></span>
+    </div>
+
+    <div class="threshold-row">
+      <label for="thresholdInput">Edge mínimo</label>
+      <input type="range" id="thresholdInput" min="0" max="15" step="0.5" value="3" oninput="renderAlerts()">
+      <span class="threshold-value" id="thresholdValue">3.0%</span>
+      <span class="alerts-count" id="alertsCount"></span>
+    </div>
+
+    <div id="alertsList">
+      <div class="alerts-empty">Cargando próximos partidos…</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="logo"><span class="mark"></span> Football Analytics Pro</div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Herramientas</h4>
+          <a href="partidos.html">Partidos</a>
+          <a href="cuotas.html">Comparador de cuotas</a>
+          <a href="alertas.html">Alertas de valor</a>
+          <a href="analizador.html">Analizador</a>
+        </div>
+        <div class="footer-col">
+          <h4>Información</h4>
+          <a href="estadisticas.html">Estadísticas</a>
+          <a href="index.html">Inicio</a>
+        </div>
+      </div>
+    </div>
+    <div class="responsible">
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+    </div>
+  </div>
+</footer>
+
+<script src="common.js"></script>
+<script>
+let VALUE_DATA = [];
+let VALUE_SCAN_RUNNING = false;
+
+function findOddsEventForFixture(fixture){
+  const h = normalizeKey(fixture.home), a = normalizeKey(fixture.away);
+  return RAW_ODDS_EVENTS.find(ev => {
+    const eh = normalizeKey(ev.home_team || "");
+    const ea = normalizeKey(ev.away_team || "");
+    return (eh.includes(h) || h.includes(eh)) && (ea.includes(a) || a.includes(ea));
+  }) || null;
+}
+
+function averageOddsFromEvent(ev){
+  const homeVals = [], drawVals = [], awayVals = [];
+  (ev.bookmakers || []).forEach(b => {
+    const outcomes = b.markets?.[0]?.outcomes || [];
+    const price = name => outcomes.find(o => o.name === name)?.price;
+    const h = price(ev.home_team), d = price("Draw"), a = price(ev.away_team);
+    if(h) homeVals.push(h);
+    if(d) drawVals.push(d);
+    if(a) awayVals.push(a);
+  });
+  if(!homeVals.length || !drawVals.length || !awayVals.length) return null;
+  const avg = arr => +(arr.reduce((s, v) => s + v, 0) / arr.length).toFixed(2);
+  return {
+    home: avg(homeVals), draw: avg(drawVals), away: avg(awayVals),
+    bestHome: Math.max(...homeVals), bestDraw: Math.max(...drawVals), bestAway: Math.max(...awayVals),
+  };
+}
+
+// Escanea los próximos partidos reales y compara la probabilidad del
+// modelo INDEPENDIENTE (sin_cuotas — nunca ve el mercado) contra las
+// cuotas reales. Comparar con "con_cuotas" sería circular: ese modelo
+// ya se construye a partir del propio mercado.
+async function scanRealValueBets(){
+  if(VALUE_SCAN_RUNNING) return;
+  VALUE_SCAN_RUNNING = true;
+
+  const btn = document.getElementById("scanValueBtn");
+  const progress = document.getElementById("alertsProgress");
+  btn.disabled = true;
+  VALUE_DATA = [];
+
+  await loadAllRealOdds(SPORT_KEY);
+
+  const candidates = DEMO_FIXTURES
+    .map(f => ({ fixture: f, event: findOddsEventForFixture(f) }))
+    .filter(c => c.event);
+
+  if(candidates.length === 0){
+    progress.textContent = "";
+    document.getElementById("alertsCount").textContent = "0 oportunidades";
+    document.getElementById("alertsList").innerHTML =
+      `<div class="alerts-empty">No hay cuotas reales de mercado todavía para los próximos partidos.</div>`;
+    btn.disabled = false;
+    VALUE_SCAN_RUNNING = false;
+    return;
+  }
+
+  for(let i = 0; i < candidates.length; i++){
+    const { fixture, event } = candidates[i];
+    progress.textContent = `Analizando partido ${i + 1} de ${candidates.length}: ${fixture.home} — ${fixture.away}…`;
+
+    const homeR = resolveModelTeamName(fixture.home);
+    const awayR = resolveModelTeamName(fixture.away);
+    if(!homeR.name || !awayR.name) continue;
+
+    const priced = averageOddsFromEvent(event);
+    if(!priced) continue;
+
+    const matchDate = fixture.isoDate || new Date().toISOString().slice(0, 10);
+
+    try {
+      const res = await fetch("/api/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          home_team: homeR.name,
+          away_team: awayR.name,
+          match_date: matchDate,
+          season: seasonFromDate(matchDate),
+          odds_h: priced.home,
+          odds_d: priced.draw,
+          odds_a: priced.away,
+        }),
+      });
+      const json = await res.json();
+      if(!res.ok || json.ok === false) continue;
+
+      const probs = json.data.sin_cuotas.probabilities;
+      VALUE_DATA.push({
+        fixture,
+        outcomes: [
+          { label: "1 · " + fixture.home, modelProb: Math.round(probs.H * 100), odd: priced.bestHome },
+          { label: "X · Empate", modelProb: Math.round(probs.D * 100), odd: priced.bestDraw },
+          { label: "2 · " + fixture.away, modelProb: Math.round(probs.A * 100), odd: priced.bestAway },
+        ],
+      });
+    } catch (err) {
+      continue;
+    }
+  }
+
+  progress.textContent = "";
+  btn.disabled = false;
+  VALUE_SCAN_RUNNING = false;
+  renderAlerts();
+}
+
+function renderAlerts(){
+  const threshold = parseFloat(document.getElementById("thresholdInput").value);
+  document.getElementById("thresholdValue").textContent = threshold.toFixed(1) + "%";
+
+  const opportunities = [];
+  VALUE_DATA.forEach(entry => {
+    entry.outcomes.forEach(o => {
+      const implied = 1 / o.odd;
+      const edge = (o.modelProb / 100) - implied;
+      if(edge * 100 >= threshold){
+        opportunities.push({ fixture: entry.fixture, outcome: o, edge: edge * 100, implied: implied * 100 });
+      }
+    });
+  });
+
+  opportunities.sort((a, b) => b.edge - a.edge);
+
+  document.getElementById("alertsCount").textContent =
+    opportunities.length === 1 ? "1 oportunidad" : `${opportunities.length} oportunidades`;
+
+  const list = document.getElementById("alertsList");
+  if(VALUE_DATA.length === 0){
+    list.innerHTML = `<div class="alerts-empty">Todavía no se ha analizado ningún partido. Pulsa "Buscar oportunidades reales" arriba.</div>`;
+    return;
+  }
+  if(opportunities.length === 0){
+    list.innerHTML = `<div class="alerts-empty">Ningún resultado real supera el edge mínimo seleccionado. Baja el umbral.</div>`;
+    return;
+  }
+
+  list.innerHTML = opportunities.map(op => `
+    <div class="alert-card">
+      <div class="alert-match">${op.fixture.home} — ${op.fixture.away}<span>${op.fixture.comp} · ${op.outcome.label}</span></div>
+      <div class="alert-metric"><div class="k">Cuota</div><div class="v">${op.outcome.odd.toFixed(2)}</div></div>
+      <div class="alert-metric"><div class="k">Modelo (sin cuotas)</div><div class="v">${op.outcome.modelProb}%</div></div>
+      <div class="alert-metric"><div class="k">Implícita</div><div class="v">${op.implied.toFixed(1)}%</div></div>
+      <div class="alert-metric"><div class="k">Edge</div><div class="v pos">+${op.edge.toFixed(1)}%</div></div>
+      <a class="btn secondary" style="grid-column:1/-1; justify-self:start"
+        href="partidos.html?home=${encodeURIComponent(op.fixture.home)}&away=${encodeURIComponent(op.fixture.away)}">Ver informe del partido →</a>
+    </div>
+  `).join("");
+}
+
+(async () => {
+  await loadModelTeams();
+  await loadRealFixtures(LEAGUE_ID, SEASON);
+  document.getElementById("alertsList").innerHTML =
+    `<div class="alerts-empty">Pulsa "Buscar oportunidades reales" para analizar los ${DEMO_FIXTURES.length} próximos partidos.</div>`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estadísticas — Football Analytics Pro</title>
+<meta name="description" content="Clasificación real y actualizada de LaLiga, con la forma reciente de cada equipo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="partidos.html">Partidos</a>
+      <a href="cuotas.html">Cuotas</a>
+      <a href="alertas.html">Alertas</a>
+      <a href="analizador.html">Analizador</a>
+      <a href="estadisticas.html" class="active">Estadísticas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="page-header">
+    <div class="eyebrow">Estadísticas</div>
+    <h1>Clasificación de LaLiga 2026/27</h1>
+    <p class="lead" id="statsSourceNote">Cargando clasificación real…</p>
+  </div>
+</div>
+
+<section class="section" style="border-top:none; padding-top:20px;">
+  <div class="wrap">
+    <div class="odds-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>Pts</th><th>Forma</th>
+          </tr>
+        </thead>
+        <tbody id="standingsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="logo"><span class="mark"></span> Football Analytics Pro</div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Herramientas</h4>
+          <a href="partidos.html">Partidos</a>
+          <a href="cuotas.html">Comparador de cuotas</a>
+          <a href="alertas.html">Alertas de valor</a>
+          <a href="analizador.html">Analizador</a>
+        </div>
+        <div class="footer-col">
+          <h4>Información</h4>
+          <a href="estadisticas.html">Estadísticas</a>
+          <a href="index.html">Inicio</a>
+        </div>
+      </div>
+    </div>
+    <div class="responsible">
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+    </div>
+  </div>
+</footer>
+
+<script src="common.js"></script>
+<script>
+function formToSpanish(form){
+  return (form || "").split("").reverse()
+    .map(c => (c === "W" ? "V" : c === "D" ? "E" : c === "L" ? "D" : c))
+    .join(" ");
+}
+
+(async () => {
+  const result = await loadRealStandings(LEAGUE_ID, SEASON);
+  const note = document.getElementById("statsSourceNote");
+
+  if(!result.ok){
+    note.textContent = `No se pudo cargar la clasificación real (${result.error}). Si ya configuraste FOOTBALL_DATA_API_KEY o API_FOOTBALL_KEY, puede que tu plan no cubra la temporada actual.`;
+    document.getElementById("standingsBody").innerHTML =
+      `<tr><td colspan="10" style="font-family:var(--font-body); color:var(--text-muted)">Sin datos disponibles.</td></tr>`;
+    return;
+  }
+
+  note.textContent = `Clasificación en vivo vía ${result.source}.`;
+  document.getElementById("standingsBody").innerHTML = result.table.map(row => `
+    <tr>
+      <td>${row.rank}</td>
+      <td class="bookie">${row.team.name}</td>
+      <td>${row.all.played}</td>
+      <td>${row.all.win}</td>
+      <td>${row.all.draw}</td>
+      <td>${row.all.lose}</td>
+      <td>${row.all.goals.for}</td>
+      <td>${row.all.goals.against}</td>
+      <td class="best">${row.points}</td>
+      <td>${formToSpanish(row.form) || "—"}</td>
+    </tr>
+  `).join("");
+})();
+</script>
+</body>
+</html>
