@@ -365,9 +365,20 @@ async function loadRealOdds(homeTeam, awayTeam, sportKey = SPORT_KEY){
       RAW_ODDS_EVENTS = data;
     }
 
+    // Comparamos por nombre canónico del modelo (vía resolveModelTeamName), no por
+    // substring literal: The Odds API usa nombres distintos a los del modelo para el
+    // mismo equipo (ej. "Atlético Madrid" vs "Atl. Madrid", "Athletic Bilbao" vs
+    // "Ath Bilbao"), así que un .includes() directo fallaba y reportaba "sin cuotas"
+    // para partidos que sí las tenían.
+    const canonicalTeamKey = name => {
+      const resolved = resolveModelTeamName(name || "");
+      return normalizeKey(resolved?.name || name || "");
+    };
+    const targetHomeKey = canonicalTeamKey(homeTeam);
+    const targetAwayKey = canonicalTeamKey(awayTeam);
     const match = data.find(ev =>
-      ev.home_team?.toLowerCase().includes(homeTeam.toLowerCase()) ||
-      ev.away_team?.toLowerCase().includes(awayTeam.toLowerCase())
+      canonicalTeamKey(ev.home_team) === targetHomeKey &&
+      canonicalTeamKey(ev.away_team) === targetAwayKey
     );
     if(!match) throw new Error("Partido no encontrado en The Odds API");
 
