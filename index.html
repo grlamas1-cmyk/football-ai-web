@@ -4,7 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Football Analytics Pro — Predicciones de LaLiga</title>
-<meta name="description" content="Predicciones de LaLiga con modelo propio, comparador de cuotas y analizador de apuestas de valor, siempre sobre partidos reales.">
+<meta name="description" content="Predicciones de LaLiga con modelo propio, comparador de cuotas y analizador de apuestas de valor sobre la agenda real de cada jornada.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="canonical" href="https://football-ai-web-self.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Football Analytics Pro">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="Football Analytics Pro — Predicciones de LaLiga">
+<meta property="og:description" content="Predicciones de LaLiga con modelo propio, comparador de cuotas y analizador de apuestas de valor sobre la agenda real de cada jornada.">
+<meta property="og:url" content="https://football-ai-web-self.vercel.app/">
+<meta property="og:image" content="https://football-ai-web-self.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Football Analytics Pro — Predicciones de LaLiga">
+<meta name="twitter:description" content="Predicciones de LaLiga con modelo propio, comparador de cuotas y analizador de apuestas de valor sobre la agenda real de cada jornada.">
+<meta name="twitter:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -33,8 +48,8 @@
 <section class="hero">
   <div class="hero-inner">
     <div class="eyebrow">Modelo predictivo propio · Solo LaLiga</div>
-    <h1>Predicciones de LaLiga sobre partidos que de verdad se van a jugar.</h1>
-    <p class="lead">Nada de escribir equipos al azar ni cuotas a mano: elige un partido real de la jornada y te damos el informe completo — predicción, análisis con IA y mercados de goles — ya con las cuotas cargadas.</p>
+    <h1>Predicciones de LaLiga con datos reales, partido a partido.</h1>
+    <p class="lead">Elige cualquier partido de la próxima jornada y obtén al instante su predicción, análisis con IA y mercados de goles — con las cuotas de mercado ya cargadas.</p>
     <div class="predict-actions">
       <a class="btn" href="partidos.html">Ver próximos partidos</a>
       <a class="btn secondary" href="estadisticas.html">Ver clasificación</a>
@@ -52,7 +67,7 @@
     <div class="home-grid">
       <a class="home-card" href="partidos.html">
         <h3>Partidos</h3>
-        <p>La agenda real de LaLiga. Elige un partido y obtén su predicción, análisis y mercados de goles al instante.</p>
+        <p>La agenda oficial de LaLiga. Elige un partido y obtén su predicción, análisis y mercados de goles al instante.</p>
         <span class="go">Ir a Partidos →</span>
       </a>
       <a class="home-card" href="cuotas.html">
@@ -79,6 +94,29 @@
   </div>
 </section>
 
+<section class="how-it-works">
+  <div class="wrap">
+    <div class="eyebrow">Cómo funciona</div>
+    <div class="how-grid">
+      <div class="how-step">
+        <span class="how-num">01</span>
+        <h3>Un modelo propio, no una fórmula genérica</h3>
+        <p>XGBoost + regresión de Poisson, entrenado con partidos reales de LaLiga desde 2015. Dos versiones: una que usa las cuotas de mercado y otra que predice sin verlas, para poder comparar el modelo contra el propio mercado sin trampa.</p>
+      </div>
+      <div class="how-step">
+        <span class="how-num">02</span>
+        <h3>Solo la agenda real de la jornada</h3>
+        <p>Cada predicción está anclada a un partido que de verdad se va a jugar, con cuotas reales de varias casas de apuestas y clasificación en vivo — nunca datos de relleno.</p>
+      </div>
+      <div class="how-step">
+        <span class="how-num">03</span>
+        <h3>El modelo se actualiza con cada jornada</h3>
+        <p>Tras cada resultado real, el modelo se reajusta automáticamente — no se queda congelado en los datos de entrenamiento.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="footer-grid">
@@ -95,6 +133,12 @@
           <h4>Información</h4>
           <a href="estadisticas.html">Estadísticas</a>
           <a href="index.html">Inicio</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="terminos.html">Términos de uso</a>
+          <a href="privacidad.html">Privacidad</a>
+          <a href="cookies.html">Cookies</a>
         </div>
       </div>
     </div>

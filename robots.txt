@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://football-ai-web-self.vercel.app/sitemap.xml
