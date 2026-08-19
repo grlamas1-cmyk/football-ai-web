@@ -448,3 +448,24 @@ function findStandingRow(teamName){
     return rk === key || rk.includes(key) || key.includes(rk);
   }) || null;
 }
+
+/* ---------------------------------------------------------
+   Avisos de predicción (notices de /api/predict): el backend mezcla
+   detalles internos (que el ELO se regresó de temporada, que faltan
+   cuotas de mercados opcionales que ni siquiera se usan) con avisos que
+   sí importan de cara a un usuario (equipo con poco historial real). Nos
+   quedamos solo con lo segundo, reescrito en lenguaje llano — lo interno
+   no aporta nada a quien solo quiere ver una predicción y solo consigue
+   que parezca que algo ha ido mal cuando no es el caso.
+--------------------------------------------------------- */
+function consumerFacingNotices(notices){
+  if(!Array.isArray(notices)) return [];
+  return notices
+    .filter(n => typeof n === "string" && n.startsWith("Sin historial en el modelo para"))
+    .map(n => {
+      const team = n.match(/Sin historial en el modelo para ([^(]+)/)?.[1]?.trim();
+      return team
+        ? `${team} tiene poco historial real en el modelo (equipo recién ascendido, o lleva tiempo fuera de LaLiga) — esta predicción puede ser menos precisa.`
+        : n;
+    });
+}

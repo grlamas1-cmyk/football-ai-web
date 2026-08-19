@@ -266,7 +266,7 @@ async function parseNaturalBet(){
 
   const winnerLabel = selection === "draw" ? "empate" : (selection === "home" ? teamA.officialName : teamB.officialName) + " gana";
   out.className = "predict-status";
-  out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — cuota ${odd.toFixed(2)}. Consultando cuotas reales y el modelo…`;
+  out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — cuota ${odd.toFixed(2)}. Consultando cuotas reales y el modelo… (puede tardar unos segundos)`;
 
   document.getElementById("oddInput").value = odd;
 
