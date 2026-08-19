@@ -62,6 +62,27 @@
   </div>
 </section>
 
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Histórico de aciertos</div>
+      <h2>¿Acierta el modelo de verdad?</h2>
+      <p id="historyNote">Cargando histórico de predicciones…</p>
+    </div>
+    <div class="accuracy-row" id="accuracyRow" style="display:none"></div>
+    <div class="odds-table-wrap" id="historyTableWrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Partido</th><th>Con cuotas</th><th>Sin cuotas</th><th>Resultado real</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="footer-grid">
@@ -127,6 +148,63 @@ function formToSpanish(form){
       <td>${formToSpanish(row.form) || "—"}</td>
     </tr>
   `).join("");
+})();
+
+const RESULT_LABEL = { H: "Local", D: "Empate", A: "Visitante" };
+
+function renderPredictionCell(model, entry){
+  const pred = entry[model].prediction;
+  const pct = Math.round(entry[model].probabilities[pred] * 100);
+  if(!entry.resolved) return `${RESULT_LABEL[pred]} (${pct}%)`;
+  const correct = entry[`${model}_correct`];
+  const cls = correct ? "history-correct" : "history-wrong";
+  const icon = correct ? "✓" : "✗";
+  return `<span class="${cls}">${icon} ${RESULT_LABEL[pred]} (${pct}%)</span>`;
+}
+
+(async () => {
+  const note = document.getElementById("historyNote");
+  try {
+    const res = await fetch("/api/predictions-history");
+    const json = await res.json();
+    if(!res.ok || !json.ok) throw new Error(json.error || `estado ${res.status}`);
+
+    if(json.resolved_count === 0){
+      note.textContent = json.total > 0
+        ? "Ya hay predicciones guardadas, pero ninguna se ha podido comparar todavía contra un resultado real."
+        : "Todavía no hay histórico — el modelo empieza a guardar una predicción de cada partido antes de que se juegue, y aquí se irá viendo si acierta o no según se vayan jugando.";
+      return;
+    }
+
+    note.textContent = `${json.resolved_count} predicción${json.resolved_count === 1 ? "" : "es"} ya comparada${json.resolved_count === 1 ? "" : "s"} contra el resultado real.`;
+
+    document.getElementById("accuracyRow").style.display = "grid";
+    document.getElementById("accuracyRow").innerHTML = `
+      <div class="accuracy-tile">
+        <div class="label">Con cuotas (mercado)</div>
+        <div class="value">${json.accuracy.con_cuotas != null ? Math.round(json.accuracy.con_cuotas * 100) + "%" : "—"}</div>
+        <div class="sub">de acierto sobre ${json.resolved_count} partidos resueltos</div>
+      </div>
+      <div class="accuracy-tile">
+        <div class="label">Sin cuotas (independiente)</div>
+        <div class="value">${json.accuracy.sin_cuotas != null ? Math.round(json.accuracy.sin_cuotas * 100) + "%" : "—"}</div>
+        <div class="sub">de acierto sobre ${json.resolved_count} partidos resueltos</div>
+      </div>
+    `;
+
+    document.getElementById("historyTableWrap").style.display = "block";
+    document.getElementById("historyBody").innerHTML = json.history.slice(0, 30).map(entry => `
+      <tr>
+        <td>${entry.match_date}</td>
+        <td class="bookie">${entry.home_team} — ${entry.away_team}</td>
+        <td>${renderPredictionCell("con_cuotas", entry)}</td>
+        <td>${renderPredictionCell("sin_cuotas", entry)}</td>
+        <td>${entry.resolved ? `${RESULT_LABEL[entry.actual_result]} (${entry.actual_home_goals}-${entry.actual_away_goals})` : "Pendiente de jugarse"}</td>
+      </tr>
+    `).join("");
+  } catch (error) {
+    note.textContent = `No se pudo cargar el histórico de predicciones (${error.message}).`;
+  }
 })();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
