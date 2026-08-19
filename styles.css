@@ -10,6 +10,11 @@
   --line:          #2c3728;
   --gold:          #d3ab2e;
   --gold-dim:      #96792a;
+  /* Igual que --gold-dim pero aclarado para pasar 4.5:1 de contraste (WCAG AA)
+     cuando se usa como texto pequeño (12-13px) sobre --surface/--surface-alt —
+     --gold-dim se queda en 3.7-4.2:1 ahí, insuficiente para texto normal
+     (sí vale para bordes/fondos, donde el umbral AA es 3:1). */
+  --gold-dim-text: #aa8930;
   --pitch:         #4a7c59;
   --pitch-bright:  #7fc292;
   --text:          #f2f3ed;
@@ -263,7 +268,7 @@ input:focus-visible, select:focus-visible, button:focus-visible{
   outline:2px solid var(--gold); outline-offset:2px;
 }
 .vs-mark{
-  font-family:var(--font-mono); color:var(--gold-dim);
+  font-family:var(--font-mono); color:var(--gold-dim-text);
   font-size:13px; text-align:center; padding-top:18px;
 }
 
@@ -292,7 +297,7 @@ input:focus-visible, select:focus-visible, button:focus-visible{
 @media (max-width:560px){ .odds-row{ grid-template-columns:1fr 1fr; } }
 .odds-hint{ font-size:12px; color:var(--text-muted); margin-top:8px; }
 .advanced-markets{ margin-top:14px; border:1px solid var(--line); border-radius:3px; padding:12px 14px; }
-.advanced-markets summary{ cursor:pointer; font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--gold-dim); }
+.advanced-markets summary{ cursor:pointer; font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--gold-dim-text); }
 .advanced-markets[open] summary{ margin-bottom:4px; }
 .goal-markets-row{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:12px; }
 .goal-markets-row .xg-item{ background:var(--surface-alt); border:1px solid var(--line); border-radius:3px; padding:10px 12px; font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
@@ -516,7 +521,7 @@ td.best::after{ content:"▲"; font-size:9px; margin-left:6px; }
 .fixture .time{ font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
 .fixture .teams{ font-weight:600; font-size:15px; }
 .fixture .teams span{ color:var(--text-muted); font-weight:400; font-size:12px; display:block; margin-top:2px; font-family:var(--font-mono); }
-.fixture .cta{ font-family:var(--font-mono); font-size:12px; color:var(--gold-dim); text-align:right; }
+.fixture .cta{ font-family:var(--font-mono); font-size:12px; color:var(--gold-dim-text); text-align:right; }
 @media (max-width:640px){ .fixture .cta{ text-align:left; margin-top:6px; } }
 .mini-bar{ display:flex; height:6px; border-radius:20px; overflow:hidden; }
 .mini-bar div:nth-child(1){ background:var(--gold); }
@@ -555,7 +560,7 @@ td.best::after{ content:"▲"; font-size:9px; margin-left:6px; }
 .home-card:hover{ border-color:var(--gold-dim); }
 .home-card h3{ font-size:17px; }
 .home-card p{ color:var(--text-muted); font-size:13.5px; margin:0; }
-.home-card .go{ margin-top:auto; font-family:var(--font-mono); font-size:12px; color:var(--gold-dim); }
+.home-card .go{ margin-top:auto; font-family:var(--font-mono); font-size:12px; color:var(--gold-dim-text); }
 
 /* ---------- "cómo funciona" (Inicio) ---------- */
 .how-it-works{ padding:56px 0 72px; border-top:1px solid var(--line); }
@@ -564,7 +569,7 @@ td.best::after{ content:"▲"; font-size:9px; margin-left:6px; }
 .how-step h3{ font-size:16px; margin:10px 0 8px; }
 .how-step p{ color:var(--text-muted); font-size:13.5px; line-height:1.6; margin:0; }
 .how-num{
-  font-family:var(--font-mono); font-size:13px; color:var(--gold-dim);
+  font-family:var(--font-mono); font-size:13px; color:var(--gold-dim-text);
   border:1px solid var(--line); border-radius:20px; padding:3px 10px;
 }
 

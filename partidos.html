@@ -67,9 +67,9 @@
       <div class="predict-status" id="predictStatus"></div>
       <div class="odds-hint" id="predictNotices" style="color:var(--danger)"></div>
 
-      <div class="model-toggle" id="modelToggle">
-        <button type="button" class="model-toggle-btn active" data-model="con_cuotas" onclick="selectSubmodel('con_cuotas')">Con cuotas (mercado)</button>
-        <button type="button" class="model-toggle-btn" data-model="sin_cuotas" onclick="selectSubmodel('sin_cuotas')">Sin cuotas (independiente)</button>
+      <div class="model-toggle" id="modelToggle" role="group" aria-label="Modelo de predicción">
+        <button type="button" class="model-toggle-btn active" data-model="con_cuotas" aria-pressed="true" onclick="selectSubmodel('con_cuotas')">Con cuotas (mercado)</button>
+        <button type="button" class="model-toggle-btn" data-model="sin_cuotas" aria-pressed="false" onclick="selectSubmodel('sin_cuotas')">Sin cuotas (independiente)</button>
       </div>
       <div class="model-toggle-hint">"Sin cuotas" es un modelo entrenado desde cero sin ninguna variable de mercado — pensado para comparar contra la casa de apuestas sin usar su propia información. Es normal que acierte algo menos que "Con cuotas": el mercado sí contiene información real.</div>
 
@@ -190,7 +190,11 @@ async function openMatch(fixture, idx){
   document.getElementById("predictNotices").textContent = "";
   document.getElementById("aiAnalysis").classList.remove("visible");
   document.getElementById("aiAnalysisText").textContent = "";
-  document.querySelectorAll(".model-toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.model === "con_cuotas"));
+  document.querySelectorAll(".model-toggle-btn").forEach(btn => {
+    const active = btn.dataset.model === "con_cuotas";
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  });
 
   const homeR = resolveModelTeamName(fixture.home);
   const awayR = resolveModelTeamName(fixture.away);
@@ -257,7 +261,11 @@ function renderNoticesBox(notices){
 
 function selectSubmodel(key){
   CURRENT_SUBMODEL = key;
-  document.querySelectorAll(".model-toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.model === key));
+  document.querySelectorAll(".model-toggle-btn").forEach(btn => {
+    const active = btn.dataset.model === key;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  });
   if(LAST_FULL_RESPONSE) renderSelectedModel(key);
 }
 
@@ -350,5 +358,6 @@ async function generateAIAnalysis(){
   }
 })();
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

@@ -36,6 +36,11 @@ export default async function handler(req, res) {
   if (!text || typeof text !== "string" || !text.trim()) {
     return res.status(400).json({ error: "Falta el texto de la apuesta." });
   }
+  // Límite de longitud: ninguna apuesta real necesita más de esto. Evita que
+  // alguien mande texto enorme y agote la cuota gratuita de Groq de un tirón.
+  if (text.length > 300) {
+    return res.status(400).json({ error: "El texto de la apuesta es demasiado largo (máximo 300 caracteres)." });
+  }
 
   const prompt = `Extrae los datos de esta apuesta de fútbol escrita en español: "${text.trim()}"
 

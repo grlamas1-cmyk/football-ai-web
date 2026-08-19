@@ -38,6 +38,18 @@ export default async function handler(req, res) {
   if (!team1 || !team2 || pHome == null || pDraw == null || pAway == null) {
     return res.status(400).json({ error: "Faltan datos de la predicción (team1, team2, pHome, pDraw, pAway)." });
   }
+  // Validación defensiva: esto solo debería recibir nombres de equipo reales
+  // y probabilidades 0-100 desde el propio frontend, pero el endpoint es
+  // público — sin esto, cualquiera podría mandar texto enorme como "team1"
+  // y agotar la cuota gratuita de Groq con un solo POST.
+  if (typeof team1 !== "string" || typeof team2 !== "string" || team1.length > 60 || team2.length > 60) {
+    return res.status(400).json({ error: "Nombres de equipo inválidos." });
+  }
+  for (const p of [pHome, pDraw, pAway]) {
+    if (typeof p !== "number" || !Number.isFinite(p) || p < 0 || p > 100) {
+      return res.status(400).json({ error: "Probabilidades inválidas (deben ser números entre 0 y 100)." });
+    }
+  }
 
   const xgLine = (xgHome != null && xgAway != null)
     ? `Goles esperados (xG): ${team1} ${Number(xgHome).toFixed(2)} — ${Number(xgAway).toFixed(2)} ${team2}.`
