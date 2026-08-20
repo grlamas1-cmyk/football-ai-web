@@ -153,7 +153,7 @@ function findFixtureForTeams(nameA, nameB){
 
 function parseNaturalBetLocally(text){
   const oddMatch =
-    text.match(/(?:cuota(?:\s+de)?\s*[:=]?\s*|@\s*)([1-9]\d?[.,]\d{1,2})\b/i) ||
+    text.match(/(?:cuota(?:\s+de)?\s*[:=]?\s*|@\s*)([1-9]\d?(?:[.,]\d{1,2})?)\b/i) ||
     text.match(/\ba\s+([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/i) ||
     text.match(/\b([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/);
   const odd = oddMatch ? parseFloat(oddMatch[1].replace(",", ".")) : null;
@@ -164,7 +164,14 @@ function parseNaturalBetLocally(text){
   let selection = null;
   const lower = text.toLowerCase();
   if(mentions.length >= 2){
-    if(/empat/.test(lower)){
+    // Doble oportunidad ("X gana o empata", "X no pierde"): describe el
+    // resultado de UN equipo, no un empate seco -- hay que comprobarlo
+    // ANTES de la regla de empate simple, o "gana o empata" se leía
+    // como un empate normal y se perdia la mitad de la apuesta real.
+    const doubleChanceMatch = lower.match(/no\s+pierde|gana\s+o\s+empata|empata\s+o\s+gana/);
+    if(doubleChanceMatch){
+      selection = doubleChanceMatch.index < teamB.idx ? "home_or_draw" : "away_or_draw";
+    } else if(/empat/.test(lower)){
       selection = "draw";
     } else {
       const loseMatch = lower.match(/pierde|cae\s+ante|cae\s+contra/);
@@ -262,9 +269,14 @@ async function parseNaturalBet(){
   if(reversed){
     if(selection === "home") actualSelection = "away";
     else if(selection === "away") actualSelection = "home";
+    else if(selection === "home_or_draw") actualSelection = "away_or_draw";
+    else if(selection === "away_or_draw") actualSelection = "home_or_draw";
   }
 
-  const winnerLabel = selection === "draw" ? "empate" : (selection === "home" ? teamA.officialName : teamB.officialName) + " gana";
+  const winnerLabel = selection === "draw" ? "empate"
+    : selection === "home_or_draw" ? teamA.officialName + " gana o empata (doble oportunidad)"
+    : selection === "away_or_draw" ? teamB.officialName + " gana o empata (doble oportunidad)"
+    : (selection === "home" ? teamA.officialName : teamB.officialName) + " gana";
   out.className = "predict-status";
   out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — cuota ${odd.toFixed(2)}. Consultando cuotas reales y el modelo… (puede tardar unos segundos)`;
 
@@ -302,7 +314,11 @@ async function parseNaturalBet(){
     // apuesta — comparar la cuota del mercado contra un modelo que ya
     // se basa en el mercado sería circular.
     const probs = json.data.sin_cuotas.probabilities;
-    const p = actualSelection === "home" ? probs.H : actualSelection === "away" ? probs.A : probs.D;
+    const p = actualSelection === "home" ? probs.H
+      : actualSelection === "away" ? probs.A
+      : actualSelection === "home_or_draw" ? probs.H + probs.D
+      : actualSelection === "away_or_draw" ? probs.A + probs.D
+      : probs.D;
     const pPct = Math.round(p * 100);
 
     document.getElementById("probInput").value = pPct;

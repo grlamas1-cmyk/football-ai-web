@@ -45,10 +45,10 @@ export default async function handler(req, res) {
   const prompt = `Extrae los datos de esta apuesta de fútbol escrita en español: "${text.trim()}"
 
 Devuelve SOLO un JSON válido, sin explicación ni markdown, con esta forma exacta:
-{"home_team": "...", "away_team": "...", "selection": "home" | "draw" | "away", "odd": 1.85}
+{"home_team": "...", "away_team": "...", "selection": "home" | "draw" | "away" | "home_or_draw" | "away_or_draw", "odd": 1.85}
 
 - home_team / away_team: los nombres de los dos equipos tal y como aparecen en el texto (respeta mayúsculas y apodos, ej. "Barça", "Atleti").
-- selection: "home" si gana el primer equipo mencionado, "away" si gana el segundo, "draw" si es empate.
+- selection: "home" si gana el primer equipo mencionado, "away" si gana el segundo, "draw" si es empate. Si es una apuesta de doble oportunidad sobre un solo equipo ("gana o empata", "no pierde"), usa "home_or_draw" si es el primer equipo o "away_or_draw" si es el segundo.
 - odd: el número de cuota mencionado (formato decimal, ej. 1.85). Si no hay cuota en el texto, usa null.
 Si no consigues identificar los dos equipos, devuelve {"home_team": null, "away_team": null, "selection": null, "odd": null}.`;
 
@@ -93,7 +93,7 @@ Si no consigues identificar los dos equipos, devuelve {"home_team": null, "away_
     return res.status(200).json({
       home_team: parsed.home_team || null,
       away_team: parsed.away_team || null,
-      selection: ["home", "draw", "away"].includes(parsed.selection) ? parsed.selection : null,
+      selection: ["home", "draw", "away", "home_or_draw", "away_or_draw"].includes(parsed.selection) ? parsed.selection : null,
       odd: typeof parsed.odd === "number" ? parsed.odd : null,
     });
   } catch (error) {
