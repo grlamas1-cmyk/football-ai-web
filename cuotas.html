@@ -58,7 +58,7 @@
     </div>
 
     <div id="oddsContent">
-      <div class="alerts-empty">Cargando próximos partidos…</div>
+      <div class="alerts-empty"><span class="spinner"></span>Cargando próximos partidos…</div>
     </div>
   </div>
 </section>
@@ -116,7 +116,7 @@ function onMatchChange(){
 }
 
 async function loadAndRenderOdds(fixture){
-  document.getElementById("oddsContent").innerHTML = `<div class="alerts-empty">Cargando cuotas reales…</div>`;
+  document.getElementById("oddsContent").innerHTML = `<div class="alerts-empty"><span class="spinner"></span>Cargando cuotas reales…</div>`;
   await loadRealOdds(fixture.home, fixture.away, SPORT_KEY);
 
   if(ODDS_SOURCE !== "live" || ODDS_ROWS.length === 0){
@@ -131,8 +131,14 @@ async function loadAndRenderOdds(fixture){
   document.getElementById("oddsContent").innerHTML = `
     <div class="filters-bar">
       <div class="field" style="min-width:220px">
-        <label>Filtrar casas de apuestas</label>
-        <div class="chip-group" id="bookieFilters"></div>
+        <details class="bookie-filter" id="bookieFilterDetails">
+          <summary id="bookieFilterSummary">Filtrar casas de apuestas</summary>
+          <div class="bookie-filter-actions">
+            <button type="button" onclick="selectAllBookies()">Todas</button>
+            <button type="button" onclick="selectNoBookies()">Ninguna</button>
+          </div>
+          <div class="chip-group" id="bookieFilters"></div>
+        </details>
       </div>
     </div>
     <div class="odds-table-wrap">
@@ -157,11 +163,38 @@ function renderBookieFilters(){
       <span class="dot"></span>${r.name}
     </label>
   `).join("");
+  updateBookieFilterSummary();
+}
+
+function updateBookieFilterSummary(){
+  document.getElementById("bookieFilterSummary").textContent =
+    `Filtrar casas de apuestas (${ACTIVE_BOOKIE_NAMES.size} de ${ODDS_ROWS.length})`;
 }
 
 function toggleBookie(name, checked){
   if(checked){ ACTIVE_BOOKIE_NAMES.add(name); } else { ACTIVE_BOOKIE_NAMES.delete(name); }
   document.querySelector(`.chip[data-bookie="${name}"]`)?.classList.toggle("active", checked);
+  updateBookieFilterSummary();
+  renderOddsTable();
+}
+
+function selectAllBookies(){
+  ACTIVE_BOOKIE_NAMES = new Set(ODDS_ROWS.map(r => r.name));
+  document.querySelectorAll("#bookieFilters .chip").forEach(chip => {
+    chip.classList.add("active");
+    chip.querySelector("input").checked = true;
+  });
+  updateBookieFilterSummary();
+  renderOddsTable();
+}
+
+function selectNoBookies(){
+  ACTIVE_BOOKIE_NAMES = new Set();
+  document.querySelectorAll("#bookieFilters .chip").forEach(chip => {
+    chip.classList.remove("active");
+    chip.querySelector("input").checked = false;
+  });
+  updateBookieFilterSummary();
   renderOddsTable();
 }
 

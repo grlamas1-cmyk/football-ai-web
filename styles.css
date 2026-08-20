@@ -128,6 +128,11 @@ nav a{ white-space:nowrap; }
     padding-top:12px; margin-top:4px;
     border-top:1px solid var(--line);
     -webkit-overflow-scrolling:touch;
+    /* Degradado fijo en el borde derecho -- sin esto, nada indica que el
+       menu tiene mas enlaces fuera de pantalla (Analizador/Estadisticas
+       quedaban invisibles sin pista de que se podia deslizar). */
+    -webkit-mask-image:linear-gradient(90deg, black calc(100% - 28px), transparent);
+    mask-image:linear-gradient(90deg, black calc(100% - 28px), transparent);
   }
 }
 
@@ -166,6 +171,19 @@ nav a{ white-space:nowrap; }
 }
 @media (prefers-reduced-motion: reduce){
   .ticker-track{ animation:none; }
+}
+
+/* ---------- spinner de carga ---------- */
+.spinner{
+  display:inline-block; width:13px; height:13px;
+  border:2px solid var(--line); border-top-color:var(--gold);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  vertical-align:-2px; margin-right:8px;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+@media (prefers-reduced-motion: reduce){
+  .spinner{ animation:none; }
 }
 
 /* ---------- hero ---------- */
@@ -420,6 +438,26 @@ td.best::after{ content:"▲"; font-size:9px; margin-left:6px; }
 .chip .dot{ width:7px; height:7px; border-radius:50%; background:var(--line); transition:background .15s ease; }
 .chip.active{ color:var(--text); border-color:var(--gold-dim); }
 .chip.active .dot{ background:var(--gold); }
+
+/* Filtro de casas de apuestas: colapsado por defecto -- con 20+ casas,
+   mostrarlas todas siempre era mucho ruido visual antes de que el
+   usuario haya hecho nada. */
+.bookie-filter summary{
+  cursor:pointer; list-style:none;
+  font-family:var(--font-mono); font-size:12.5px; color:var(--text-muted);
+  padding:8px 0; user-select:none;
+}
+.bookie-filter summary::-webkit-details-marker{ display:none; }
+.bookie-filter summary::before{ content:"▸ "; color:var(--gold-dim-text); }
+.bookie-filter[open] summary::before{ content:"▾ "; }
+.bookie-filter summary:hover{ color:var(--text); }
+.bookie-filter-actions{ display:flex; gap:14px; margin:6px 0 10px; }
+.bookie-filter-actions button{
+  background:none; border:none; padding:0;
+  font-family:var(--font-mono); font-size:11.5px; color:var(--gold-dim-text);
+  cursor:pointer; text-decoration:underline;
+}
+.bookie-filter-actions button:hover{ color:var(--gold); }
 
 /* ---------- gráfico de cuotas ---------- */
 .chart-panel{
