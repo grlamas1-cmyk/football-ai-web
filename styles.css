@@ -514,6 +514,15 @@ td.best::after{ content:"▲"; font-size:9px; margin-left:6px; }
 .alert-metric .k{ font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; color:var(--text-muted); letter-spacing:.05em; }
 .alert-metric .v{ font-family:var(--font-mono); font-size:15px; font-weight:600; }
 .alert-metric .v.pos{ color:var(--success); }
+/* Alerta contra un favorito claro del mercado -- ver FAVORITE_THRESHOLD
+   en alertas.html. Ambar, no rojo: es una cautela de calibracion
+   comprobada, no un error real. */
+.alert-card.caution{ border-left-color:var(--gold-dim); }
+.alert-caveat{
+  grid-column:1/-1;
+  font-family:var(--font-mono); font-size:11.5px; color:var(--gold-dim-text);
+  border-top:1px dashed var(--line); padding-top:10px;
+}
 .alerts-empty{
   padding:24px; text-align:center; color:var(--text-muted); font-size:13px;
   border:1px dashed var(--line); border-radius:4px;

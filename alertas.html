@@ -191,12 +191,28 @@ async function scanRealValueBets(){
       if(!res.ok || json.ok === false) continue;
 
       const probs = json.data.sin_cuotas.probabilities;
+
+      // Favorito segun el mercado (cuota MEDIA, no la mejor -- para
+      // saber que opina el mercado en conjunto, no un solo libro suelto),
+      // normalizado para quitar el margen de la casa. Se usa para avisar
+      // en las alertas que apuestan contra un favorito claro: ver
+      // FAVORITE_THRESHOLD en renderAlerts() y la investigacion de esta
+      // sesion (decil de favoritos mas fuertes del mercado: sin_cuotas
+      // da de media 72.5% cuando la realidad es 85.4% -- infravalora
+      // sistematicamente al favorito claro, no es "valor" real).
+      const rawH = 1 / priced.home, rawD = 1 / priced.draw, rawA = 1 / priced.away;
+      const totalRaw = rawH + rawD + rawA;
+      const marketProbs = { H: rawH / totalRaw, D: rawD / totalRaw, A: rawA / totalRaw };
+      const favoriteKey = Object.keys(marketProbs).reduce((best, key) =>
+        marketProbs[key] > marketProbs[best] ? key : best, "H");
+
       VALUE_DATA.push({
         fixture,
+        marketFavorite: { key: favoriteKey, prob: marketProbs[favoriteKey] },
         outcomes: [
-          { label: "1 · " + fixture.home, modelProb: Math.round(probs.H * 100), odd: priced.bestHome },
-          { label: "X · Empate", modelProb: Math.round(probs.D * 100), odd: priced.bestDraw },
-          { label: "2 · " + fixture.away, modelProb: Math.round(probs.A * 100), odd: priced.bestAway },
+          { key: "H", label: "1 · " + fixture.home, modelProb: Math.round(probs.H * 100), odd: priced.bestHome },
+          { key: "D", label: "X · Empate", modelProb: Math.round(probs.D * 100), odd: priced.bestDraw },
+          { key: "A", label: "2 · " + fixture.away, modelProb: Math.round(probs.A * 100), odd: priced.bestAway },
         ],
       });
     } catch (err) {
@@ -210,6 +226,13 @@ async function scanRealValueBets(){
   renderAlerts();
 }
 
+// Umbral de "favorito claro del mercado" a partir del cual, segun la
+// calibracion real comprobada esta sesion, sin_cuotas empieza a
+// infravalorarlo de forma sistematica (no es un numero de la literatura:
+// sale de agrupar los 816 partidos del holdout de test por decil de
+// favoritismo de mercado -- ver conversacion de la sesion 2026-08-20).
+const FAVORITE_THRESHOLD = 0.65;
+
 function renderAlerts(){
   const threshold = parseFloat(document.getElementById("thresholdInput").value);
   document.getElementById("thresholdValue").textContent = threshold.toFixed(1) + "%";
@@ -220,7 +243,13 @@ function renderAlerts(){
       const implied = 1 / o.odd;
       const edge = (o.modelProb / 100) - implied;
       if(edge * 100 >= threshold){
-        opportunities.push({ fixture: entry.fixture, outcome: o, edge: edge * 100, implied: implied * 100 });
+        const isAgainstStrongFavorite = !!entry.marketFavorite &&
+          o.key !== entry.marketFavorite.key &&
+          entry.marketFavorite.prob >= FAVORITE_THRESHOLD;
+        opportunities.push({
+          fixture: entry.fixture, outcome: o, edge: edge * 100, implied: implied * 100,
+          isAgainstStrongFavorite,
+        });
       }
     });
   });
@@ -241,12 +270,15 @@ function renderAlerts(){
   }
 
   list.innerHTML = opportunities.map(op => `
-    <div class="alert-card">
+    <div class="alert-card${op.isAgainstStrongFavorite ? " caution" : ""}">
       <div class="alert-match">${op.fixture.home} — ${op.fixture.away}<span>${op.fixture.comp} · ${op.outcome.label}</span></div>
       <div class="alert-metric"><div class="k">Cuota</div><div class="v">${op.outcome.odd.toFixed(2)}</div></div>
       <div class="alert-metric"><div class="k">Modelo (sin cuotas)</div><div class="v">${op.outcome.modelProb}%</div></div>
       <div class="alert-metric"><div class="k">Implícita</div><div class="v">${op.implied.toFixed(1)}%</div></div>
       <div class="alert-metric"><div class="k">Edge</div><div class="v pos">+${op.edge.toFixed(1)}%</div></div>
+      ${op.isAgainstStrongFavorite ? `
+        <div class="alert-caveat">⚠ Va en contra de un favorito claro del mercado. En este tipo de partidos comprobamos que el modelo independiente tiende a infravalorar al favorito — trata este "valor" con más cautela que el resto.</div>
+      ` : ""}
       <a class="btn secondary" style="grid-column:1/-1; justify-self:start"
         href="partidos.html?home=${encodeURIComponent(op.fixture.home)}&away=${encodeURIComponent(op.fixture.away)}">Ver informe del partido →</a>
     </div>
