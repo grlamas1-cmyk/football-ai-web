@@ -43,7 +43,7 @@
   <div class="page-header">
     <div class="eyebrow">Analizador de apuestas</div>
     <h1>Calcula si una apuesta tiene valor</h1>
-    <p class="lead">Escribe tu apuesta sobre un partido de la <b>próxima jornada de LaLiga</b> (ej. "Real Madrid gana a Barcelona a cuota 1.85") y calculamos el valor al instante con el modelo independiente y las cuotas reales de mercado — no hace falta escribir la probabilidad a mano.</p>
+    <p class="lead">Escribe tu apuesta sobre un partido de la <b>próxima jornada de LaLiga</b> con tus propias palabras (ej. "Real Madrid gana a Barcelona a cuota 1.85", "Getafe puntúa en casa del Osasuna", o incluso "¿qué cuota sería buena para que gane el Osasuna?") y calculamos el valor al instante con el modelo independiente y las cuotas reales de mercado — no hace falta escribir la probabilidad a mano, y tampoco hace falta dar una cuota si solo quieres saber cuál sería justa.</p>
   </div>
 </div>
 
@@ -168,7 +168,7 @@ function parseNaturalBetLocally(text){
     // resultado de UN equipo, no un empate seco -- hay que comprobarlo
     // ANTES de la regla de empate simple, o "gana o empata" se leía
     // como un empate normal y se perdia la mitad de la apuesta real.
-    const doubleChanceMatch = lower.match(/no\s+pierde|gana\s+o\s+empata|empata\s+o\s+gana/);
+    const doubleChanceMatch = lower.match(/no\s+pierde|gana\s+o\s+empata|empata\s+o\s+gana|puntúa|puntua|suma\s+puntos|saca\s+algo(?:\s+positivo)?|resiste\s+sin\s+perder/);
     if(doubleChanceMatch){
       selection = doubleChanceMatch.index < teamB.idx ? "home_or_draw" : "away_or_draw";
     } else if(/empat/.test(lower)){
@@ -242,11 +242,13 @@ async function parseNaturalBet(){
     out.textContent = "No he entendido el resultado (gana / empate / pierde).";
     return;
   }
-  if(!odd){
-    out.className = "predict-status err";
-    out.textContent = "No he encontrado la cuota en el texto. Añádela, ej: \"...a cuota 1.85\".";
-    return;
-  }
+  // La cuota es opcional: si no aparece en el texto (o el usuario
+  // directamente pregunta "¿qué cuota me haría falta?"), seguimos igual
+  // -- en vez de comparar contra una cuota dada, calculamos la cuota
+  // justa (break-even) que necesitaría para tener valor. No tiene
+  // sentido bloquear aqui cuando el usuario ni siquiera esta pidiendo
+  // eso.
+  const hasOdd = !!odd;
 
   // Los equipos son reales, pero ¿juegan ENTRE SÍ próximamente? Si no,
   // no tiene sentido predecir ese partido.
@@ -277,10 +279,11 @@ async function parseNaturalBet(){
     : selection === "home_or_draw" ? teamA.officialName + " gana o empata (doble oportunidad)"
     : selection === "away_or_draw" ? teamB.officialName + " gana o empata (doble oportunidad)"
     : (selection === "home" ? teamA.officialName : teamB.officialName) + " gana";
+  const oddLabel = hasOdd ? `cuota ${odd.toFixed(2)}` : "sin cuota indicada — calculando la cuota justa";
   out.className = "predict-status";
-  out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — cuota ${odd.toFixed(2)}. Consultando cuotas reales y el modelo… (puede tardar unos segundos)`;
+  out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — ${oddLabel}. Consultando cuotas reales y el modelo… (puede tardar unos segundos)`;
 
-  document.getElementById("oddInput").value = odd;
+  if(hasOdd) document.getElementById("oddInput").value = odd;
 
   await loadRealOdds(actualHome, actualAway, SPORT_KEY);
   const marketOdds = getOddsInputs();
@@ -323,7 +326,21 @@ async function parseNaturalBet(){
 
     document.getElementById("probInput").value = pPct;
     out.className = "predict-status ok";
-    out.textContent = `${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — cuota ${odd.toFixed(2)}. Probabilidad real del modelo independiente: ${pPct}%.`;
+
+    if(hasOdd){
+      out.textContent = `${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — cuota ${odd.toFixed(2)}. Probabilidad real del modelo independiente: ${pPct}%.`;
+    } else if(p > 0){
+      // Sin cuota que evaluar: en vez de pedirsela, calculamos la cuota
+      // justa (break-even, 1/probabilidad) -- rellenamos oddInput con
+      // ella para que el calculador de abajo arranque en el punto de
+      // equilibrio (edge 0%) hasta que el usuario meta una cuota real
+      // que haya encontrado.
+      const fairOdd = 1 / p;
+      document.getElementById("oddInput").value = fairOdd.toFixed(2);
+      out.textContent = `${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel}. Probabilidad real del modelo independiente: ${pPct}%. Para que esta apuesta tenga valor necesitarías una cuota superior a ${fairOdd.toFixed(2)}.`;
+    } else {
+      out.textContent = `${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel}. El modelo le da una probabilidad prácticamente nula (${pPct}%) — no hay cuota real que haga esto rentable.`;
+    }
     analyzeBet();
   } catch (err) {
     out.className = "predict-status err";

@@ -42,14 +42,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "El texto de la apuesta es demasiado largo (máximo 300 caracteres)." });
   }
 
-  const prompt = `Extrae los datos de esta apuesta de fútbol escrita en español: "${text.trim()}"
+  const prompt = `Eres quien interpreta apuestas de fútbol escritas en español natural, de cualquier forma en que alguien real las escriba (no solo frases de manual). Interpreta el SIGNIFICADO real de esta apuesta, no busques palabras exactas de una lista: "${text.trim()}"
 
 Devuelve SOLO un JSON válido, sin explicación ni markdown, con esta forma exacta:
 {"home_team": "...", "away_team": "...", "selection": "home" | "draw" | "away" | "home_or_draw" | "away_or_draw", "odd": 1.85}
 
-- home_team / away_team: los nombres de los dos equipos tal y como aparecen en el texto (respeta mayúsculas y apodos, ej. "Barça", "Atleti").
-- selection: "home" si gana el primer equipo mencionado, "away" si gana el segundo, "draw" si es empate. Si es una apuesta de doble oportunidad sobre un solo equipo ("gana o empata", "no pierde"), usa "home_or_draw" si es el primer equipo o "away_or_draw" si es el segundo.
-- odd: el número de cuota mencionado (formato decimal, ej. 1.85). Si no hay cuota en el texto, usa null.
+- home_team / away_team: los nombres de los dos equipos tal y como aparecen en el texto (respeta mayúsculas y apodos, ej. "Barça", "Atleti"). Si el texto dice "en casa de X" o "visita a X", X es el equipo local aunque se mencione en segundo lugar -- el orden de home_team/away_team en tu respuesta debe reflejar quién juega en casa de verdad, no el orden en que se mencionaron.
+- selection, según lo que de verdad significa la apuesta:
+  - "home" si el equipo LOCAL gana en solitario (ese resultado exacto, nada más).
+  - "away" si el equipo VISITANTE gana en solitario.
+  - "draw" si el resultado es un EMPATE, sin más.
+  - "home_or_draw" / "away_or_draw" (doble oportunidad) si la apuesta es que un equipo NO PIERDE -- es decir, gana O empata -- sea cual sea la forma exacta en que esté escrito. Esto incluye frases explícitas ("gana o empata", "no pierde") pero también expresiones coloquiales con el MISMO significado: "puntúa", "suma", "saca algo (positivo)", "resiste", "se lleva un punto como mínimo", "no cae ante", etc. Usa "home_or_draw" si es sobre el equipo local, "away_or_draw" si es sobre el visitante.
+  - Si de verdad no consigues determinar qué tipo de apuesta es, usa null (mejor null que adivinar al azar).
+- odd: el número de cuota mencionado (formato decimal, ej. 1.85). Es NORMAL y ESPERADO que no haya ninguna cuota en el texto -- por ejemplo si el usuario pregunta "¿qué cuota necesitaría X para tener valor?" en vez de dar una cuota concreta. En ese caso usa null, no es un fallo.
 Si no consigues identificar los dos equipos, devuelve {"home_team": null, "away_team": null, "selection": null, "odd": null}.`;
 
   try {
