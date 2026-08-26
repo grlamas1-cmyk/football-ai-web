@@ -65,6 +65,44 @@
 <section class="section">
   <div class="wrap">
     <div class="section-head">
+      <div class="eyebrow">Validación histórica</div>
+      <h2>Así de bien predice el modelo, con datos reales</h2>
+      <p>Antes de que exista un histórico de predicciones en vivo (ver más abajo), esto es lo que el modelo <b>sin_cuotas</b> — el que nunca ve las cuotas de mercado — acertó de verdad en el pasado. Validación temporal estricta: para cada temporada, el modelo se entrena solo con partidos anteriores a ella y se evalúa contra partidos que nunca vio. No es una promesa de resultados futuros ni de ganancias apostando — es una medida honesta de precisión predictiva.</p>
+    </div>
+    <div class="accuracy-row">
+      <div class="accuracy-tile">
+        <div class="label">Precisión media (7 temporadas reales, 2635 partidos)</div>
+        <div class="value">52.4%</div>
+        <div class="sub">Frente al 33% que daría el azar entre los 3 resultados posibles (local / empate / visitante)</div>
+      </div>
+      <div class="accuracy-tile">
+        <div class="label">Rango por temporada</div>
+        <div class="value">48-56%</div>
+        <div class="sub">Se mantiene consistente entre temporadas, no es un pico aislado de una sola</div>
+      </div>
+    </div>
+    <div class="odds-table-wrap">
+      <table>
+        <thead>
+          <tr><th>Temporada</th><th>Partidos evaluados</th><th>Acierto (1X2)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2019/20</td><td>375</td><td>48.3%</td></tr>
+          <tr><td>2020/21</td><td>370</td><td>52.7%</td></tr>
+          <tr><td>2021/22</td><td>380</td><td>50.5%</td></tr>
+          <tr><td>2022/23</td><td>375</td><td>53.9%</td></tr>
+          <tr><td>2023/24</td><td>380</td><td>55.5%</td></tr>
+          <tr><td>2024/25</td><td>380</td><td>55.0%</td></tr>
+          <tr><td>2025/26</td><td>375</td><td>50.7%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
       <div class="eyebrow">Histórico de aciertos</div>
       <h2>¿Acierta el modelo de verdad?</h2>
       <p id="historyNote"><span class="spinner"></span>Cargando histórico de predicciones…</p>
