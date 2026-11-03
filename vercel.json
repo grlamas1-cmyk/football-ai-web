@@ -1,7 +1,17 @@
 {
   "rewrites": [
-    { "source": "/pronostico/:slug", "destination": "/api/pronostico?slug=:slug" },
-    { "source": "/pronosticos", "destination": "/api/pronosticos" },
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
+    { "source": "/pronostico/:slug", "destination": "/api/pages?r=pronostico&slug=:slug" },
+    { "source": "/pronosticos", "destination": "/api/pages?r=pronosticos" },
+    { "source": "/sitemap.xml", "destination": "/api/pages?r=sitemap" },
+    { "source": "/api/upcoming", "destination": "/api/data?r=upcoming" },
+    { "source": "/api/picks", "destination": "/api/data?r=picks" },
+    { "source": "/api/report", "destination": "/api/data?r=report" },
+    { "source": "/api/predictions-history", "destination": "/api/data?r=predictions-history" },
+    { "source": "/api/teams", "destination": "/api/data?r=teams" },
+    { "source": "/api/backend-health", "destination": "/api/data?r=backend-health" },
+    { "source": "/api/odds", "destination": "/api/feeds?r=odds" },
+    { "source": "/api/event-odds", "destination": "/api/feeds?r=event-odds" },
+    { "source": "/api/fixtures", "destination": "/api/feeds?r=fixtures" },
+    { "source": "/api/standings", "destination": "/api/feeds?r=standings" }
   ]
 }

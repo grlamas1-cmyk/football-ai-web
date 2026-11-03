@@ -263,7 +263,8 @@ function renderModel(){
   document.getElementById("calibCorners").innerHTML = UI.calibrationChart(c95.calibration, { label: "más de 9.5 córners" });
   document.getElementById("cornersText").textContent = `Más de 9.5 córners. Media real ${corners.mean_actual.toFixed(1)} por partido; correlación predicho-real ${corners.correlation.toFixed(2)}: los córners se anticipan poco.`;
   document.getElementById("calibCards").innerHTML = UI.calibrationChart(k45.calibration, { label: "más de 4.5 tarjetas" });
-  document.getElementById("cardsText").textContent = `Más de 4.5 tarjetas. Media real ${cards.mean_actual.toFixed(1)} por partido; correlación ${cards.correlation.toFixed(2)}, el doble que en córners.`;
+  const cardsRef = REPORT.counts.cards_ref;
+  document.getElementById("cardsText").textContent = `Más de 4.5 tarjetas. Media real ${cards.mean_actual.toFixed(1)} por partido; correlación ${cards.correlation.toFixed(2)}${cardsRef ? ` (${cardsRef.correlation.toFixed(2)} cuando se conoce el árbitro)` : ""}.`;
   const g = REPORT.goals;
   const row = (name, model, ref, refName, text) => `<tr><td>${name}</td><td class="r">${model.toFixed(4)}</td><td class="r">${ref == null ? "—" : `${ref.toFixed(4)} <span class="muted small">${refName}</span>`}</td><td class="muted wrap">${text}</td></tr>`;
   document.getElementById("marketsQuality").innerHTML = [
@@ -271,6 +272,7 @@ function renderModel(){
     row("Ambos marcan", g.btts.model_log_loss, null, "", "Sin cuotas históricas fiables para comparar."),
     ...corners.lines.map(l => row(`Córners más/menos ${l.line}`, l.model_log_loss, l.naive_log_loss, "media liga", l.model_log_loss < l.naive_log_loss ? "Mejora a usar la media de la liga." : "No mejora a la media de la liga.")),
     ...cards.lines.map(l => row(`Tarjetas más/menos ${l.line}`, l.model_log_loss, l.naive_log_loss, "media liga", l.model_log_loss < l.naive_log_loss ? "Mejora a usar la media de la liga." : "No mejora a la media de la liga.")),
+    ...(cardsRef ? cardsRef.lines.map(l => row(`Tarjetas ${l.line} con árbitro`, l.model_log_loss, l.naive_log_loss, "media liga", "Con el árbitro designado (se usa cuando ya se conoce).")) : []),
   ].join("");
 }
 

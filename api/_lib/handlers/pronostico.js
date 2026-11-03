@@ -6,8 +6,8 @@
 // partido ya se jugó, se enseña el resultado frente a lo que se predijo
 // (y las apuestas registradas), para que el enlace siga sirviendo.
 
-import { FOOTER, HEADER, SCRIPTS, SITE, head } from "./_lib/layout.js";
-import { dateLong, esc, fetchSelf, matchSlug, odds, pct, pickCard, probBar, resultChip, sendHtml, shareBar, signedPct, teamName } from "./_lib/site.js";
+import { FOOTER, HEADER, SCRIPTS, SITE, head } from "../layout.js";
+import { dateLong, esc, fetchSelf, matchSlug, odds, pct, pickCard, probBar, resultChip, sendHtml, shareBar, signedPct, teamName } from "../site.js";
 
 const EXCHANGES = new Set(["betfair_ex_eu", "betfair_ex_uk", "matchbook", "smarkets"]);
 
@@ -77,7 +77,7 @@ function upcomingPage(m, url) {
   const faq = [
     [`¿Quién es favorito en el ${home} - ${away}?`, `Según el modelo propio, ${favLabel === "Empate" ? "el empate es el resultado más probable" : `el ${favLabel}`} (${pct(s[favKey])}). Probabilidades: ${home} ${pct(s.H)}, empate ${pct(s.D)}, ${away} ${pct(s.A)}.`],
     [`¿Cuántos goles habrá en el ${home} - ${away}?`, `Se esperan ${(p.sin_cuotas.expected_goals.home + p.sin_cuotas.expected_goals.away).toFixed(1)} goles en total. Probabilidad de más de 2.5 goles: ${pct(g.over_25)}; de que marquen los dos: ${pct(g.btts_yes)}. Resultado exacto más probable: ${top ? `${top.home}-${top.away} (${pct(top.probability)})` : "—"}.`],
-    [`¿Cuántos córners y tarjetas habrá?`, `El modelo espera ${corners.expected_total.toFixed(1)} córners (más de ${cornersLine}: ${pct(cOver)}) y ${cards.expected_total.toFixed(1)} tarjetas (más de ${cardsLine}: ${pct(kOver)}).`],
+    [`¿Cuántos córners y tarjetas habrá?`, `El modelo espera ${corners.expected_total.toFixed(1)} córners (más de ${cornersLine}: ${pct(cOver)}) y ${cards.expected_total.toFixed(1)} tarjetas (más de ${cardsLine}: ${pct(kOver)})${cards.referee ? `, teniendo en cuenta al árbitro designado, ${cards.referee}` : ""}.`],
   ];
 
   const jsonLd = [

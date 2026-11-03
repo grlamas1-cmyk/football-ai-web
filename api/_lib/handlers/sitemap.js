@@ -2,8 +2,8 @@
 // página por partido (próximos y ya jugados del histórico), para que
 // Google descubra los pronósticos nuevos cada jornada sin tocar nada.
 
-import { SITE } from "./_lib/layout.js";
-import { fetchSelf, matchSlug } from "./_lib/site.js";
+import { SITE } from "../layout.js";
+import { fetchSelf, matchSlug } from "../site.js";
 
 const STATIC = [
   ["/", "daily", "1.0"], ["/pronosticos", "daily", "0.9"], ["/partidos.html", "daily", "0.8"],

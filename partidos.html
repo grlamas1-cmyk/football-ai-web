@@ -206,7 +206,9 @@ function panelCounts(m, kind){
   const teamLines = isCards ? [1.5, 2.5] : [3.5, 4.5, 5.5];
   const noun = isCards ? "tarjetas" : "córners";
   const note = isCards
-    ? (c.uses_referee ? "Incluye el historial del árbitro designado." : "Árbitro aún sin tener en cuenta: se usa el comportamiento de los dos equipos. Las tarjetas cuentan amarillas y rojas (1 cada una).")
+    ? (c.uses_referee
+        ? `Incluye el historial del árbitro designado, ${UI.esc(c.referee)} (${c.referee_matches ?? 0} partidos suyos en la base de datos): es lo que más afina la predicción de tarjetas. Amarillas y rojas cuentan 1 cada una.`
+        : "Árbitro aún no designado (se publica 1-2 días antes): se usa el comportamiento de los dos equipos. Con el árbitro, la predicción mejora. Amarillas y rojas cuentan 1 cada una.")
     : "Córners de los dos equipos; la dispersión real (partidos muy por encima o por debajo de la media) está ajustada con datos de LaLiga.";
   return `<div class="mkt-grid" style="margin-bottom:16px">
       <div class="mkt"><span class="k">Total esperado</span><span class="v">${c.expected_total.toFixed(1)}</span><span class="f">${noun}</span></div>

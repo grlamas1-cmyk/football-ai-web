@@ -2,8 +2,8 @@
 // vercel.json), generada en el servidor: es la puerta de entrada desde
 // Google ("pronósticos laliga") y enlaza a la página de cada partido.
 
-import { FOOTER, HEADER, SCRIPTS, SITE, head } from "./_lib/layout.js";
-import { dateLong, esc, fetchSelf, matchSlug, odds, pct, sendHtml, shareBar, signedPct, teamName } from "./_lib/site.js";
+import { FOOTER, HEADER, SCRIPTS, SITE, head } from "../layout.js";
+import { dateLong, esc, fetchSelf, matchSlug, odds, pct, sendHtml, shareBar, signedPct, teamName } from "../site.js";
 
 export default async function handler(req, res) {
   const [upcoming, history, picks] = await Promise.all([
