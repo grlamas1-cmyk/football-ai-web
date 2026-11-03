@@ -939,3 +939,4 @@ details.explain p, details.explain li{ color:var(--text-muted); font-size:14px; 
   .pick-metrics{ gap:6px; }
   .kpi .v{ font-size:24px; }
 }
+.picks-list > .empty, .picks-list > .loading, .preview-grid > .empty, .preview-grid > .loading{ grid-column:1 / -1; }

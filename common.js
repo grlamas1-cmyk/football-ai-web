@@ -343,12 +343,13 @@ async function fetchJson(url){
   }
 }
 
-let UPCOMING_CACHE = null;
-async function loadUpcoming(){
-  if(UPCOMING_CACHE) return UPCOMING_CACHE;
-  const data = await fetchJson("/api/upcoming");
-  UPCOMING_CACHE = data.ok ? { ...data, matches: data.matches || [] } : { ok: false, error: data.error, matches: [] };
-  return UPCOMING_CACHE;
+// Se guarda la promesa (no el resultado) para que dos llamadas
+// simultáneas en la misma página compartan una sola petición.
+let UPCOMING_PROMISE = null;
+function loadUpcoming(){
+  UPCOMING_PROMISE ??= fetchJson("/api/upcoming").then(data =>
+    data.ok ? { ...data, matches: data.matches || [] } : { ok: false, error: data.error, matches: [] });
+  return UPCOMING_PROMISE;
 }
 const loadPicks = () => fetchJson("/api/picks");
 const loadReport = () => fetchJson("/api/report");
