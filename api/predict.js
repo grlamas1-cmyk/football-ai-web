@@ -27,7 +27,10 @@ export default async function handler(req, res) {
   }
 
   const body = req.body || {};
-  const required = ["home_team", "away_team", "odds_h", "odds_d", "odds_a"];
+  // Las cuotas ya no son obligatorias por separado: se pueden mandar las
+  // 3 cuotas 1X2 (odds_h/d/a) o el evento completo de The Odds API
+  // (odds_event), del que el backend saca la media y las apuestas con valor.
+  const required = ["home_team", "away_team", "match_date"];
   const missing = required.filter((k) => body[k] === undefined || body[k] === null || body[k] === "");
   if (missing.length > 0) {
     return res.status(400).json({
@@ -55,7 +58,7 @@ export default async function handler(req, res) {
     if (!backendRes.ok) {
       return res.status(backendRes.status).json({
         ok: false,
-        error: data.error || `El backend del modelo respondió con estado ${backendRes.status}.`,
+        error: data.error || data.detail || `El backend del modelo respondió con estado ${backendRes.status}.`,
       });
     }
 

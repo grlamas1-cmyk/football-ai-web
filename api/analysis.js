@@ -51,18 +51,34 @@ export default async function handler(req, res) {
     }
   }
 
-  const xgLine = (xgHome != null && xgAway != null)
-    ? `Goles esperados (xG): ${team1} ${Number(xgHome).toFixed(2)} — ${Number(xgAway).toFixed(2)} ${team2}.`
-    : "";
+  // Contexto opcional (todo validado por tamaño/tipo por el mismo motivo):
+  // probabilidades del mercado, mercados de goles/córners/tarjetas y la
+  // apuesta con valor si la hay. Permite que el análisis compare modelo y
+  // casas en vez de limitarse a repetir el 1X2.
+  const { marketHome, marketDraw, marketAway, over25, btts, cornersExp, cardsExp, pick } = req.body || {};
+  const pctOk = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 100;
+  const countOk = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 40;
+  if (pick != null && (typeof pick !== "string" || pick.length > 160)) {
+    return res.status(400).json({ error: "Apuesta inválida." });
+  }
+
+  const extra = [];
+  if (xgHome != null && xgAway != null) extra.push(`Goles esperados: ${team1} ${Number(xgHome).toFixed(2)} — ${Number(xgAway).toFixed(2)} ${team2}.`);
+  if ([marketHome, marketDraw, marketAway].every(pctOk)) extra.push(`Las casas de apuestas (cuotas medias, sin margen) dan: ${team1} ${marketHome}%, empate ${marketDraw}%, ${team2} ${marketAway}%.`);
+  if (pctOk(over25)) extra.push(`Probabilidad de más de 2.5 goles: ${over25}%.`);
+  if (pctOk(btts)) extra.push(`Probabilidad de que marquen los dos: ${btts}%.`);
+  if (countOk(cornersExp)) extra.push(`Córners esperados en total: ${Number(cornersExp).toFixed(1)}.`);
+  if (countOk(cardsExp)) extra.push(`Tarjetas esperadas en total: ${Number(cardsExp).toFixed(1)}.`);
+  if (pick) extra.push(`Apuesta con valor detectada (una casa paga más que la cuota justa de referencia): ${pick}.`);
 
   const prompt = `Eres un analista deportivo que explica predicciones de fútbol de forma clara y honesta, sin tecnicismos.
-Datos de un modelo estadístico (LaLiga) para el partido ${team1} vs ${team2}:
+Datos de un modelo estadístico propio (LaLiga) para el partido ${team1} vs ${team2}:
 - Probabilidad de victoria de ${team1} (local): ${pHome}%
 - Probabilidad de empate: ${pDraw}%
 - Probabilidad de victoria de ${team2} (visitante): ${pAway}%
-${xgLine}
+${extra.map((line) => `- ${line}`).join("\n")}
 
-Escribe un análisis breve en español (3-4 frases, sin listas ni markdown) explicando qué dice el modelo y por qué ese resultado es el más probable según estos números. No garantices resultados, no des consejos financieros, y recuerda en una frase corta al final que es una estimación probabilística, no una certeza.`;
+Escribe un análisis breve en español (4-5 frases, sin listas ni markdown): qué dice el modelo, si coincide o no con las casas de apuestas y qué tipo de partido se espera (goles, córners, tarjetas) según estos números. Si hay una apuesta con valor, menciónala con prudencia. No inventes datos que no estén aquí (lesiones, alineaciones, rachas), no garantices resultados ni des consejos financieros, y termina con una frase corta recordando que es una estimación probabilística, no una certeza.`;
 
   try {
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -75,7 +91,7 @@ Escribe un análisis breve en español (3-4 frases, sin listas ni markdown) expl
         model: GROQ_MODEL,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.6,
-        max_tokens: 300,
+        max_tokens: 420,
       }),
     });
 

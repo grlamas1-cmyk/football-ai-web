@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apuestas con valor — Football Analytics Pro</title>
+<meta name="description" content="Apuestas con valor para la jornada de LaLiga: casa, cuota, cuota justa y stake recomendado según tu bank.">
+<meta name="theme-color" content="#0d1310">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="canonical" href="https://football-ai-web-self.vercel.app/apuestas.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Football Analytics Pro">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="Apuestas con valor — Football Analytics Pro">
+<meta property="og:description" content="Apuestas con valor para la jornada de LaLiga: casa, cuota, cuota justa y stake recomendado según tu bank.">
+<meta property="og:url" content="https://football-ai-web-self.vercel.app/apuestas.html">
+<meta property="og:image" content="https://football-ai-web-self.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Apuestas con valor — Football Analytics Pro">
+<meta name="twitter:description" content="Apuestas con valor para la jornada de LaLiga: casa, cuota, cuota justa y stake recomendado según tu bank.">
+<meta name="twitter:image" content="https://football-ai-web-self.vercel.app/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
+    <nav aria-label="Principal">
+      <a href="index.html">Inicio</a>
+      <a href="partidos.html">Partidos</a>
+      <a href="apuestas.html" class="active">Apuestas</a>
+      <a href="estadisticas.html">Resultados</a>
+      <a href="cuotas.html">Cuotas</a>
+      <a href="analizador.html">Analizador</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+  <section class="page-header">
+    <div class="eyebrow">Apuestas con valor · LaLiga</div>
+    <h1>Apuestas de la jornada</h1>
+    <p class="lead">Cuotas que pagan más de lo justo, con la casa, la cuota y cuánto apostar según tu bank. Se registran automáticamente 48 horas antes de cada partido y se liquidan con el resultado real.</p>
+    <p class="updated" id="updatedAt"></p>
+  </section>
+
+  <div class="bank-box">
+    <label for="bankInput">Tu bank (dinero que dedicas a apostar):</label>
+    <input id="bankInput" type="number" min="10" step="10" inputmode="decimal" value="100">
+    <span class="muted small">€ · El stake se calcula como % de esta cantidad (1 unidad = 1%).</span>
+  </div>
+
+  <section class="section" style="padding-top:28px">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Registradas</div>
+        <h2>Próximas 48 horas</h2>
+        <p class="muted">Estas ya cuentan en el <a href="estadisticas.html#vivo">registro público</a>: la cuota y la casa son las del momento en que se detectaron.</p>
+      </div>
+    </div>
+    <div class="picks-list" id="officialPicks"><p class="loading"><span class="spinner"></span>Cargando…</p></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">En observación</div>
+        <h2>Partidos más adelante</h2>
+        <p class="muted">Valor detectado hoy en partidos a más de 48 h. Aún no se registran: las cuotas se mueven y solo cuentan si siguen teniendo valor cerca del partido.</p>
+      </div>
+    </div>
+    <div class="picks-list" id="laterPicks"><p class="loading"><span class="spinner"></span>Cargando…</p></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><div><div class="eyebrow">Registro</div><h2>Cómo van</h2></div><a class="btn secondary" href="estadisticas.html">Ver todo el historial →</a></div>
+    <div class="kpis" id="liveKpis"></div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Cómo se eligen</div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <h3>La regla</h3>
+        <p class="muted">La <b>cuota justa</b> es la de Pinnacle quitándole su margen: es la casa con las cuotas más afinadas del mercado. Si otra casa paga al menos un <b>2% más</b> de valor esperado (y la cuota no pasa de 4.0), es una apuesta con valor. Solo una por mercado y partido.</p>
+        <p class="muted">El <b>stake</b> es 1/4 de Kelly sobre ese valor: entre el 0,2% y el 2,5% del bank. Pequeño a propósito — las rachas malas existen incluso con valor real.</p>
+      </div>
+      <div class="card">
+        <h3>Lo que dice el backtest (2019-2026)</h3>
+        <div id="backtestSummary" class="muted"><span class="spinner"></span>Cargando…</div>
+        <p class="muted small" style="margin-top:10px">El modelo propio aparece como segunda opinión. Se probó usarlo para elegir las apuestas y su rentabilidad quedaba en torno al 0%: el mercado ya sabe lo que sabe el modelo.</p>
+      </div>
+    </div>
+    <div class="callout warn" style="margin-top:18px"><b>Antes de apostar:</b> valor esperado positivo no significa ganar cada apuesta (se pierden más de la mitad). Las casas pueden limitar a quien gana de forma sistemática, y algunas de las casas listadas pueden no operar en tu país. Apuesta solo lo que puedas permitirte perder.</div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="logo"><span class="mark"></span> Football Analytics Pro</div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Herramientas</h4>
+          <a href="partidos.html">Partidos</a>
+          <a href="apuestas.html">Apuestas con valor</a>
+          <a href="cuotas.html">Comparador de cuotas</a>
+          <a href="analizador.html">Analizador</a>
+        </div>
+        <div class="footer-col">
+          <h4>Información</h4>
+          <a href="estadisticas.html">Resultados y validación</a>
+          <a href="index.html">Inicio</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="terminos.html">Términos de uso</a>
+          <a href="privacidad.html">Privacidad</a>
+          <a href="cookies.html">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="responsible">
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica: no apuestes dinero que no puedas permitirte perder. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional (en España: <a href="https://www.jugarbien.es" rel="noopener">jugarbien.es</a>).
+    </div>
+  </div>
+</footer>
+
+<script src="common.js"></script>
+<script src="ui.js"></script>
+<script>
+let BANK = UI.readBank();
+let STATE = { upcoming: null, picks: null };
+
+function render(){
+  const { upcoming, picks } = STATE;
+  const official = document.getElementById("officialPicks");
+  const later = document.getElementById("laterPicks");
+  const now = Date.now();
+
+  if(picks?.ok){
+    const pending = picks.picks.filter(p => p.status === "pending" && new Date(p.kickoff).getTime() > now)
+      .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+    official.innerHTML = pending.length
+      ? pending.map(p => UI.pickCard(p, { bank: BANK })).join("")
+      : `<div class="empty">No hay apuestas registradas para las próximas 48 horas. Se revisa cada mañana: aparecen aquí cuando una casa paga claramente más de lo justo.</div>`;
+  } else {
+    official.innerHTML = `<div class="empty">El registro de apuestas no está disponible ahora mismo.</div>`;
+  }
+
+  if(upcoming?.ok){
+    const registered = new Set((picks?.picks || []).map(p => `${p.match_id}:${p.market}`));
+    const items = upcoming.matches
+      .filter(m => new Date(m.kickoff).getTime() - now > 48 * 3600e3)
+      .flatMap(m => (m.prediction.picks || []).filter(p => !registered.has(`${m.match_id}:${p.market}`)).map(p => ({ p, m })));
+    later.innerHTML = items.length
+      ? items.map(({ p, m }) => UI.pickCard(p, { bank: BANK, match: m })).join("")
+      : `<div class="empty">Nada en observación ahora mismo.</div>`;
+    document.getElementById("updatedAt").textContent = `Cuotas revisadas: ${UI.dateLabel(upcoming.generated_at)}`;
+  } else {
+    later.innerHTML = `<div class="empty">Las predicciones de la jornada no están disponibles ahora mismo.</div>`;
+  }
+
+  if(picks?.ok){
+    const s = picks.summary;
+    const money = (u) => UI.money(u * BANK / 100, true);
+    document.getElementById("liveKpis").innerHTML = [
+      `<div class="kpi"><span class="k">Registradas</span><span class="v">${s.total}</span><span class="s">${s.pending} pendientes</span></div>`,
+      `<div class="kpi"><span class="k">Acertadas / falladas</span><span class="v">${s.won} / ${s.lost}</span><span class="s">${s.push} devueltas</span></div>`,
+      `<div class="kpi"><span class="k">Beneficio</span><span class="v ${s.profit_units >= 0 ? "pos" : "neg"}">${UI.units(s.profit_units)}</span><span class="s">${money(s.profit_units)} con tu bank</span></div>`,
+      `<div class="kpi"><span class="k">ROI</span><span class="v">${s.roi == null ? "—" : UI.signedPct(s.roi)}</span><span class="s">sobre lo apostado</span></div>`,
+    ].join("");
+  }
+}
+
+document.getElementById("bankInput").value = BANK;
+document.getElementById("bankInput").addEventListener("input", (e) => {
+  const v = Number(e.target.value);
+  if(Number.isFinite(v) && v > 0){ BANK = v; UI.writeBank(v); render(); }
+});
+
+(async () => {
+  const [upcoming, picks, report] = await Promise.all([loadUpcoming(), loadPicks(), loadReport()]);
+  STATE = { upcoming, picks };
+  render();
+  const box = document.getElementById("backtestSummary");
+  if(report.ok){
+    const b = report.betting;
+    box.innerHTML = `<p>Aplicando exactamente esta regla a 2019-2026 con las cuotas reales de cada partido: <b>${b.all.n} apuestas</b>, ${UI.pct(b.all.hit_rate)} acertadas, beneficio <b class="${b.all.profit_units >= 0 ? "pos" : "neg"}">${UI.units(b.all.profit_units, 1)}</b> (ROI ${UI.signedPct(b.all.roi_staked)}).</p>
+      <p>La regla se eligió con 2019-2023 (ROI ${UI.signedPct(b.validation.roi_staked)}) y se comprobó después en 2023-2026 (ROI ${UI.signedPct(b.test.roi_staked)}). En ambos tramos el ${UI.pct(b.all.clv_positive_share)} de las apuestas batió la cuota de cierre — la mejor señal de que el valor es real, aunque el beneficio a corto plazo dependa de la suerte.</p>`;
+  } else {
+    box.textContent = "Informe del backtest no disponible ahora mismo.";
+  }
+})();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

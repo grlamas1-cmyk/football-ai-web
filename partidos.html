@@ -4,19 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Partidos — Football Analytics Pro</title>
-<meta name="description" content="Próximos partidos de LaLiga: elige uno y consigue su predicción completa al instante.">
+<meta name="description" content="Próximos partidos de LaLiga con predicción del modelo propio, goles, hándicap, córners, tarjetas y apuestas con valor.">
+<meta name="theme-color" content="#0d1310">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="canonical" href="https://football-ai-web-self.vercel.app/partidos.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Football Analytics Pro">
 <meta property="og:locale" content="es_ES">
 <meta property="og:title" content="Partidos — Football Analytics Pro">
-<meta property="og:description" content="Próximos partidos de LaLiga: elige uno y consigue su predicción completa al instante.">
+<meta property="og:description" content="Próximos partidos de LaLiga con predicción del modelo propio, goles, hándicap, córners, tarjetas y apuestas con valor.">
 <meta property="og:url" content="https://football-ai-web-self.vercel.app/partidos.html">
 <meta property="og:image" content="https://football-ai-web-self.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Partidos — Football Analytics Pro">
-<meta name="twitter:description" content="Próximos partidos de LaLiga: elige uno y consigue su predicción completa al instante.">
+<meta name="twitter:description" content="Próximos partidos de LaLiga con predicción del modelo propio, goles, hándicap, córners, tarjetas y apuestas con valor.">
 <meta name="twitter:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,70 +31,31 @@
 <header>
   <div class="header-inner">
     <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
-    <nav>
+    <nav aria-label="Principal">
       <a href="index.html">Inicio</a>
       <a href="partidos.html" class="active">Partidos</a>
+      <a href="apuestas.html" class="highlight">Apuestas</a>
+      <a href="estadisticas.html">Resultados</a>
       <a href="cuotas.html">Cuotas</a>
-      <a href="alertas.html">Alertas</a>
       <a href="analizador.html">Analizador</a>
-      <a href="estadisticas.html">Estadísticas</a>
     </nav>
   </div>
 </header>
-
 <div class="ticker-outer">
   <div class="ticker-track" id="tickerTrack"><span><span class="spinner"></span>Cargando próximos partidos de LaLiga…</span></div>
 </div>
 
-<div class="wrap">
-  <div class="page-header">
+<main class="wrap">
+  <section class="page-header">
     <div class="eyebrow">LaLiga · Próxima jornada</div>
     <h1>Próximos partidos</h1>
-    <p class="lead">Elige un partido de la lista para ver su informe completo — predicción, análisis con IA y mercados de goles — con las cuotas reales ya cargadas.</p>
-  </div>
-</div>
+    <p class="lead">Elige un partido para ver su informe: probabilidades del modelo frente a las casas, goles, hándicap asiático, córners, tarjetas y las apuestas con valor.</p>
+    <p class="updated" id="updatedAt"></p>
+  </section>
 
-<section class="section" style="border-top:none; padding-top:20px;">
-  <div class="wrap">
-
-    <div class="match-detail" id="matchDetail">
-      <div class="match-detail-head">
-        <div>
-          <h3 id="matchDetailTitle">—</h3>
-          <div class="odds-hint" id="matchDetailMeta"></div>
-        </div>
-        <button class="match-detail-close" onclick="closeMatch()">Cerrar ✕</button>
-      </div>
-
-      <span class="odds-source-tag" id="oddsSourceTag"></span>
-      <div class="predict-status" id="predictStatus"></div>
-      <div class="odds-hint" id="predictNotices"></div>
-
-      <div class="model-toggle" id="modelToggle" role="group" aria-label="Modelo de predicción">
-        <button type="button" class="model-toggle-btn active" data-model="con_cuotas" aria-pressed="true" onclick="selectSubmodel('con_cuotas')">Con cuotas (mercado)</button>
-        <button type="button" class="model-toggle-btn" data-model="sin_cuotas" aria-pressed="false" onclick="selectSubmodel('sin_cuotas')">Sin cuotas (independiente)</button>
-      </div>
-      <div class="model-toggle-hint">"Sin cuotas" es un modelo entrenado desde cero sin ninguna variable de mercado — pensado para comparar contra la casa de apuestas sin usar su propia información. Es normal que acierte algo menos que "Con cuotas": el mercado sí contiene información real.</div>
-
-      <div class="result-panel visible">
-        <div class="prob-bars" id="probBars"></div>
-        <div class="xg-row" id="xgRow"></div>
-        <div class="goal-markets-row" id="goalMarketsRow"></div>
-        <div class="predict-actions">
-          <button class="btn secondary" id="aiButton" onclick="generateAIAnalysis()">✦ Generar análisis con IA</button>
-          <a class="btn secondary" href="cuotas.html" id="oddsLink">Ver comparador de cuotas →</a>
-          <a class="btn secondary" href="alertas.html">Buscar valor en todos los partidos →</a>
-        </div>
-        <div class="ai-analysis" id="aiAnalysis">
-          <span class="ai-label">Análisis generado por IA</span>
-          <span id="aiAnalysisText"></span>
-        </div>
-      </div>
-    </div>
-
-    <div id="fixturesList"></div>
-  </div>
-</section>
+  <div id="report" class="report" hidden></div>
+  <div class="match-list" id="matchList"><p class="loading"><span class="spinner"></span>Cargando la jornada…</p></div>
+</main>
 
 <footer>
   <div class="wrap">
@@ -101,13 +65,13 @@
         <div class="footer-col">
           <h4>Herramientas</h4>
           <a href="partidos.html">Partidos</a>
+          <a href="apuestas.html">Apuestas con valor</a>
           <a href="cuotas.html">Comparador de cuotas</a>
-          <a href="alertas.html">Alertas de valor</a>
           <a href="analizador.html">Analizador</a>
         </div>
         <div class="footer-col">
           <h4>Información</h4>
-          <a href="estadisticas.html">Estadísticas</a>
+          <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
         <div class="footer-col">
@@ -119,243 +83,266 @@
       </div>
     </div>
     <div class="responsible">
-      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica: no apuestes dinero que no puedas permitirte perder. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional (en España: <a href="https://www.jugarbien.es" rel="noopener">jugarbien.es</a>).
     </div>
   </div>
 </footer>
 
 <script src="common.js"></script>
+<script src="ui.js"></script>
 <script>
-let CURRENT_MATCH = null;
-let LAST_FULL_RESPONSE = null;
-let LAST_PREDICTION = null;
-let CURRENT_SUBMODEL = "con_cuotas";
+let MATCHES = [];          // entradas de /api/upcoming (o equivalentes construidas al vuelo)
+let CURRENT = null;
+
+const fair = (p) => (p > 0 ? 1 / p : null);
+const lineKey = (line) => String(line).replace(".", "");
 
 function renderTicker(){
   const track = document.getElementById("tickerTrack");
-  if(!track) return;
-  const items = DEMO_FIXTURES.length > 0
-    ? DEMO_FIXTURES.map(f => `<b>${f.home}</b> vs ${f.away} — ${f.comp} · ${f.time}`)
-    : [`Sin partidos próximos disponibles ahora mismo.`];
+  const items = MATCHES.length
+    ? MATCHES.map(m => `<b>${UI.esc(m.home_name)}</b> vs ${UI.esc(m.away_name)} — ${UI.esc(UI.dateLabel(m.kickoff))}`)
+    : ["Sin partidos próximos disponibles ahora mismo."];
   const html = items.map(i => `<span>${i}</span>`).join("");
   track.innerHTML = html + html;
 }
 
-function renderFixturesList(){
-  const el = document.getElementById("fixturesList");
-  if(DEMO_FIXTURES.length === 0){
-    el.innerHTML = `<div class="alerts-empty">No se han podido cargar los próximos partidos reales de LaLiga. Vuelve a intentarlo en unos minutos.</div>`;
+function favouriteText(m){
+  const pr = m.prediction?.sin_cuotas?.probabilities;
+  if(!pr) return "Predicción al abrir el informe";
+  const best = Object.entries(pr).sort((a, b) => b[1] - a[1])[0];
+  const who = best[0] === "H" ? m.home_name : best[0] === "A" ? m.away_name : "Empate";
+  return `Favorito del modelo: ${who} (${UI.pct(best[1])})`;
+}
+
+function renderList(){
+  const box = document.getElementById("matchList");
+  if(MATCHES.length === 0){
+    box.innerHTML = `<div class="empty">No hay partidos próximos disponibles ahora mismo. Las predicciones se preparan cada mañana con las cuotas de la jornada.</div>`;
     return;
   }
-  el.innerHTML = DEMO_FIXTURES.map((f, i) => `
-    <div class="fixture" role="button" tabindex="0" data-idx="${i}"
-         onclick="openMatchByIndex(${i})" onkeypress="if(event.key==='Enter') openMatchByIndex(${i})">
-      <div class="time">${f.time}<br>${f.comp}</div>
-      <div class="teams">${f.home} — ${f.away}</div>
-      <div class="cta">Ver informe →</div>
-    </div>
-  `).join("");
-}
-
-function openMatchByIndex(i){ openMatch(DEMO_FIXTURES[i], i); }
-
-function closeMatch(){
-  document.getElementById("matchDetail").classList.remove("visible");
-  document.querySelectorAll(".fixture.active").forEach(el => el.classList.remove("active"));
-  CURRENT_MATCH = null;
-}
-
-async function openMatch(fixture, idx){
-  CURRENT_MATCH = fixture;
-  CURRENT_SUBMODEL = "con_cuotas";
-  LAST_FULL_RESPONSE = null;
-
-  document.querySelectorAll(".fixture").forEach(el => el.classList.remove("active"));
-  if(idx != null) document.querySelector(`.fixture[data-idx="${idx}"]`)?.classList.add("active");
-
-  const panel = document.getElementById("matchDetail");
-  panel.classList.add("visible");
-  panel.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  document.getElementById("matchDetailTitle").textContent = `${fixture.home} vs ${fixture.away}`;
-  document.getElementById("matchDetailMeta").textContent = `${fixture.comp} · ${fixture.time}`;
-  document.getElementById("oddsLink").href = `cuotas.html?home=${encodeURIComponent(fixture.home)}&away=${encodeURIComponent(fixture.away)}`;
-  document.getElementById("predictStatus").className = "predict-status";
-  document.getElementById("predictStatus").textContent = "Buscando cuotas reales…";
-  document.getElementById("oddsSourceTag").className = "odds-source-tag";
-  document.getElementById("oddsSourceTag").textContent = "";
-  document.getElementById("probBars").innerHTML = "";
-  document.getElementById("xgRow").innerHTML = "";
-  document.getElementById("goalMarketsRow").innerHTML = "";
-  document.getElementById("predictNotices").textContent = "";
-  document.getElementById("aiAnalysis").classList.remove("visible");
-  document.getElementById("aiAnalysisText").textContent = "";
-  document.querySelectorAll(".model-toggle-btn").forEach(btn => {
-    const active = btn.dataset.model === "con_cuotas";
-    btn.classList.toggle("active", active);
-    btn.setAttribute("aria-pressed", String(active));
+  box.innerHTML = MATCHES.map((m, i) => {
+    const pr = m.prediction?.sin_cuotas?.probabilities;
+    const nPicks = m.prediction?.picks?.length || 0;
+    return `<div class="match-card ${CURRENT === i ? "active" : ""}" role="button" tabindex="0" data-i="${i}" aria-label="Ver informe ${UI.esc(m.home_name)} contra ${UI.esc(m.away_name)}">
+      <div class="when">${UI.esc(UI.dateLabel(m.kickoff))}</div>
+      <div class="teams">
+        <div class="team">${UI.badge(m.home_team)} ${UI.esc(m.home_name)}</div>
+        <div class="team">${UI.badge(m.away_team)} ${UI.esc(m.away_name)}</div>
+      </div>
+      <div>${pr ? UI.probBar(pr, m.home_team, m.away_team, { compact: true }) : ""}<div class="fav" style="margin-top:8px">${UI.esc(favouriteText(m))}</div></div>
+      <div class="picks-count">${nPicks ? `<span class="pill green">${nPicks} apuesta${nPicks > 1 ? "s" : ""} con valor</span>` : `<span class="pill">Ver informe →</span>`}</div>
+    </div>`;
+  }).join("");
+  box.querySelectorAll(".match-card").forEach(card => {
+    const open = () => openMatch(Number(card.dataset.i));
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); } });
   });
-
-  const homeR = resolveModelTeamName(fixture.home);
-  const awayR = resolveModelTeamName(fixture.away);
-  if(!homeR.name || !awayR.name){
-    const bad = !homeR.name ? fixture.home : fixture.away;
-    document.getElementById("predictStatus").className = "predict-status err";
-    document.getElementById("predictStatus").textContent = `El modelo no tiene datos suficientes para "${bad}" todavía, así que no se puede predecir este partido con fiabilidad.`;
-    return;
-  }
-
-  await loadRealOdds(fixture.home, fixture.away, SPORT_KEY);
-  const odds = getOddsInputs();
-  const tag = document.getElementById("oddsSourceTag");
-  if(ODDS_SOURCE === "live"){
-    tag.className = "odds-source-tag live";
-    tag.textContent = "● Cuotas reales";
-  } else {
-    tag.className = "odds-source-tag demo";
-    tag.textContent = "● Sin cuotas reales todavía para este partido";
-  }
-
-  if(odds.odds_h == null || odds.odds_d == null || odds.odds_a == null || ODDS_SOURCE !== "live"){
-    document.getElementById("predictStatus").className = "predict-status err";
-    document.getElementById("predictStatus").textContent = "Todavía no hay cuotas reales de mercado para este partido (los proveedores suelen abrirlas pocos días antes). Vuelve a intentarlo más tarde.";
-    return;
-  }
-
-  document.getElementById("predictStatus").textContent = "Consultando el modelo… (puede tardar unos segundos si es la primera consulta en un rato)";
-  const matchDate = fixture.isoDate || new Date().toISOString().slice(0, 10);
-
-  try {
-    const res = await fetch("/api/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        home_team: homeR.name,
-        away_team: awayR.name,
-        match_date: matchDate,
-        season: seasonFromDate(matchDate),
-        odds_h: odds.odds_h,
-        odds_d: odds.odds_d,
-        odds_a: odds.odds_a,
-      }),
-    });
-    const json = await res.json();
-    if(!res.ok || json.ok === false) throw new Error(json.error || "Error del backend");
-
-    LAST_FULL_RESPONSE = json.data;
-    document.getElementById("predictStatus").className = "predict-status ok";
-    document.getElementById("predictStatus").textContent = `✓ Modelo real · ${new Date().toLocaleTimeString("es-ES")}`;
-    renderNoticesBox(json.data.notices);
-    renderSelectedModel(CURRENT_SUBMODEL);
-  } catch (err) {
-    document.getElementById("predictStatus").className = "predict-status err";
-    document.getElementById("predictStatus").textContent = `No se pudo conectar con el modelo (${err.message}).`;
-  }
 }
 
-function renderNoticesBox(notices){
-  const el = document.getElementById("predictNotices");
-  const visible = consumerFacingNotices(notices);
-  el.textContent = visible.length ? visible.join(" · ") : "";
+function ouRows(probs, lines, prefix = ""){
+  return lines.map(line => {
+    const over = probs[`${prefix}over_${lineKey(line)}`];
+    if(over == null) return "";
+    const under = 1 - over;
+    return `<tr><td>${line}</td>
+      <td><span class="ou-bar" style="width:${Math.round(over * 60)}px"></span>${UI.pct(over)}</td><td>${UI.odds(fair(over))}</td>
+      <td><span class="ou-bar" style="width:${Math.round(under * 60)}px;background:var(--gold)"></span>${UI.pct(under)}</td><td>${UI.odds(fair(under))}</td></tr>`;
+  }).join("");
 }
+const ouTable = (title, rowsHtml) => `<table class="ou-table"><thead><tr><th>${title}</th><th>Más</th><th>Cuota justa</th><th>Menos</th><th>Cuota justa</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+const mkt = (k, p, extra = "") => `<div class="mkt"><span class="k">${k}</span><span class="v">${UI.pct(p)}</span><span class="f">cuota justa ${UI.odds(fair(p))}${extra}</span></div>`;
 
-function selectSubmodel(key){
-  CURRENT_SUBMODEL = key;
-  document.querySelectorAll(".model-toggle-btn").forEach(btn => {
-    const active = btn.dataset.model === key;
-    btn.classList.toggle("active", active);
-    btn.setAttribute("aria-pressed", String(active));
-  });
-  if(LAST_FULL_RESPONSE) renderSelectedModel(key);
-}
-
-function probRow(label, value){
-  return `
-    <div class="prob-row">
-      <div class="label">${label}</div>
-      <div class="prob-track"><div class="prob-fill" style="width:${value}%"></div></div>
-      <div class="prob-value">${value}%</div>
+function panelSummary(m){
+  const p = m.prediction;
+  const con = p.con_cuotas;
+  const notices = (p.notices || []).map(n => `<div class="callout info" style="margin-top:12px">${UI.esc(n)}</div>`).join("");
+  const scores = (p.markets?.top_scores || []).map(s => `<span class="pill">${s.home}-${s.away} · ${UI.pct(s.probability)}</span>`).join(" ");
+  const nPicks = (p.picks || []).length;
+  return `<div class="compare">
+      <div><div class="row-label">Modelo propio (sin mirar cuotas)</div>${UI.probBar(p.sin_cuotas.probabilities, m.home_team, m.away_team)}</div>
+      ${con ? `<div><div class="row-label">Casas de apuestas (cuota media sin margen)</div>${UI.probBar(con.probabilities, m.home_team, m.away_team)}</div>` : ""}
     </div>
-  `;
+    <h4 class="mkt-title">Resultados exactos más probables</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${scores}</div>
+    ${nPicks ? `<div class="callout" style="margin-top:18px"><b>${nPicks} apuesta${nPicks > 1 ? "s" : ""} con valor</b> en este partido — mira la pestaña "Apuestas".</div>` : ""}
+    ${notices}
+    <details class="explain"><summary>¿Por qué el modelo y las casas no coinciden?</summary>
+      <p>El modelo propio solo ve datos del juego (goles, xG, tiros, forma, nivel de cada equipo). Las casas incluyen además lesiones, alineaciones y el dinero apostado. En la validación de 7 temporadas el mercado acierta algo más (53,7% frente a 52,7%), así que una diferencia grande suele significar que el mercado sabe algo que el modelo no — por eso las apuestas con valor no se eligen solo con el modelo.</p>
+    </details>`;
 }
 
-function renderSelectedModel(key){
-  if(!LAST_FULL_RESPONSE || !CURRENT_MATCH) return;
-  const modelResult = LAST_FULL_RESPONSE[key];
-  if(!modelResult) return;
-
-  const probs = modelResult.probabilities;
-  const pHome = Math.round(probs.H * 100);
-  const pDraw = Math.round(probs.D * 100);
-  const pAway = Math.round(probs.A * 100);
-
-  document.getElementById("probBars").innerHTML = `
-    ${probRow(CURRENT_MATCH.home, pHome)}
-    ${probRow("Empate", pDraw)}
-    ${probRow(CURRENT_MATCH.away, pAway)}
-  `;
-
-  const xgHome = modelResult.expected_goals?.home ?? null;
-  const xgAway = modelResult.expected_goals?.away ?? null;
-  document.getElementById("xgRow").innerHTML = (xgHome != null && xgAway != null) ? `
-    <div class="xg-item">Goles esperados (local)<b>${Number(xgHome).toFixed(2)}</b></div>
-    <div class="xg-item">Goles esperados (visitante)<b>${Number(xgAway).toFixed(2)}</b></div>
-  ` : "";
-
-  const gm = modelResult.goal_markets;
-  document.getElementById("goalMarketsRow").innerHTML = gm ? [
-    ["Más de 2.5 goles", gm.over_25], ["Menos de 2.5 goles", gm.under_25],
-    ["Ambos marcan: Sí", gm.btts_yes], ["Ambos marcan: No", gm.btts_no],
-  ].map(([label, p]) => `<div class="xg-item">${label}<b>${Math.round(p * 100)}%</b></div>`).join("") : "";
-
-  LAST_PREDICTION = { team1: CURRENT_MATCH.home, team2: CURRENT_MATCH.away, pHome, pDraw, pAway, xgHome, xgAway };
-  document.getElementById("aiAnalysis").classList.remove("visible");
-  document.getElementById("aiAnalysisText").textContent = "";
-  document.getElementById("aiButton").disabled = false;
-  document.getElementById("aiButton").textContent = "✦ Generar análisis con IA";
+function panelGoals(m){
+  const g = m.prediction.markets.goals;
+  const teamRows = (side, name) => [0.5, 1.5, 2.5].map(l => mkt(`${name}: más de ${l}`, g[`${side}_over_${lineKey(l)}`])).join("");
+  return `${ouTable("Goles totales", ouRows(g, [0.5, 1.5, 2.5, 3.5, 4.5, 5.5]))}
+    <h4 class="mkt-title">Ambos marcan, doble oportunidad y empate no válido</h4>
+    <div class="mkt-grid">
+      ${mkt("Ambos marcan: Sí", g.btts_yes)}${mkt("Ambos marcan: No", g.btts_no)}
+      ${mkt(`1X (${m.home_name} o empate)`, g.home_or_draw)}${mkt(`X2 (${m.away_name} o empate)`, g.away_or_draw)}${mkt("12 (no hay empate)", g.home_or_away)}
+      ${mkt(`Empate no válido: ${m.home_name}`, g.dnb_home)}${mkt(`Empate no válido: ${m.away_name}`, g.dnb_away)}
+    </div>
+    <h4 class="mkt-title">Goles de cada equipo</h4>
+    <div class="mkt-grid">${teamRows("home", m.home_name)}${teamRows("away", m.away_name)}</div>`;
 }
 
-async function generateAIAnalysis(){
-  if(!LAST_PREDICTION) return;
-  const btn = document.getElementById("aiButton");
-  const box = document.getElementById("aiAnalysis");
-  const textEl = document.getElementById("aiAnalysisText");
+function panelHandicap(m){
+  const ah = m.prediction.markets.asian_handicap || {};
+  const rows = Object.entries(ah).map(([line, r]) => {
+    const fh = r.win > 0 ? 1 + r.lose / r.win : null, fa = r.lose > 0 ? 1 + r.win / r.lose : null;
+    const awayLine = -Number(line);
+    return `<tr><td>${UI.esc(m.home_name)} ${line} / ${UI.esc(m.away_name)} ${awayLine > 0 ? "+" : ""}${awayLine}</td>
+      <td>${UI.pct(r.win)}</td><td>${UI.pct(r.push)}</td><td>${UI.pct(r.lose)}</td><td>${UI.odds(fh)}</td><td>${UI.odds(fa)}</td></tr>`;
+  }).join("");
+  return `<table class="ou-table"><thead><tr><th>Línea</th><th>Gana local</th><th>Devuelve</th><th>Gana visitante</th><th>Justa local</th><th>Justa visit.</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="muted small" style="margin-top:10px">En las líneas de cuarto (±0.25, ±0.75) la apuesta se divide en dos mitades, como hacen las casas: "devuelve" incluye la mitad devuelta.</p>`;
+}
 
-  btn.disabled = true;
-  btn.textContent = "Generando…";
-  box.classList.add("visible");
-  textEl.textContent = "Consultando el modelo…";
+function panelCounts(m, kind){
+  const c = m.prediction.markets[kind];
+  const isCards = kind === "cards";
+  const totalLines = isCards ? [2.5, 3.5, 4.5, 5.5, 6.5] : [7.5, 8.5, 9.5, 10.5, 11.5, 12.5];
+  const teamLines = isCards ? [1.5, 2.5] : [3.5, 4.5, 5.5];
+  const noun = isCards ? "tarjetas" : "córners";
+  const note = isCards
+    ? (c.uses_referee ? "Incluye el historial del árbitro designado." : "Árbitro aún sin tener en cuenta: se usa el comportamiento de los dos equipos. Las tarjetas cuentan amarillas y rojas (1 cada una).")
+    : "Córners de los dos equipos; la dispersión real (partidos muy por encima o por debajo de la media) está ajustada con datos de LaLiga.";
+  return `<div class="mkt-grid" style="margin-bottom:16px">
+      <div class="mkt"><span class="k">Total esperado</span><span class="v">${c.expected_total.toFixed(1)}</span><span class="f">${noun}</span></div>
+      <div class="mkt"><span class="k">${UI.esc(m.home_name)}</span><span class="v">${c.expected_home.toFixed(1)}</span></div>
+      <div class="mkt"><span class="k">${UI.esc(m.away_name)}</span><span class="v">${c.expected_away.toFixed(1)}</span></div>
+    </div>
+    ${ouTable(`Total de ${noun}`, ouRows(c.total, totalLines))}
+    <h4 class="mkt-title">Por equipo</h4>
+    ${ouTable(UI.esc(m.home_name), ouRows(c.home, teamLines))}
+    ${ouTable(UI.esc(m.away_name), ouRows(c.away, teamLines))}
+    <p class="muted small" style="margin-top:10px">${note} Validado en 7 temporadas: ${isCards ? "acierta claramente más que usar la media de la liga" : "mejora a la media de la liga, pero por poco: los córners son difíciles de anticipar"} (ver Resultados).</p>`;
+}
 
+function panelPicks(m){
+  const picks = m.prediction.picks || [];
+  const bank = UI.readBank();
+  if(picks.length === 0){
+    return `<div class="empty">Ninguna casa paga ahora mismo claramente más que la cuota justa en este partido. Si eso cambia, aparecerá aquí (y en <a href="apuestas.html">Apuestas</a>).</div>`;
+  }
+  return `<p class="muted small">Stake calculado para un bank de ${UI.money(bank)} — cámbialo en <a href="apuestas.html?bank=${bank}">Apuestas</a>.</p>
+    <div class="picks-list">${picks.map(p => UI.pickCard(p, { bank, showMatch: false })).join("")}</div>`;
+}
+
+function panelAI(){
+  return `<p class="muted">Un resumen en lenguaje natural de lo que dicen los números (generado con IA a partir solo de los datos de arriba).</p>
+    <button class="btn" id="aiBtn" type="button">✦ Generar análisis con IA</button>
+    <p id="aiText" style="margin-top:14px;white-space:pre-wrap"></p>`;
+}
+
+async function generateAI(){
+  const m = MATCHES[CURRENT];
+  const p = m.prediction, s = p.sin_cuotas.probabilities, c = p.con_cuotas?.probabilities;
+  const btn = document.getElementById("aiBtn"), out = document.getElementById("aiText");
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>Generando…`;
+  const round = (x) => Math.round(x * 1000) / 10;
+  const best = (p.picks || [])[0];
   try {
     const res = await fetch("/api/analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(LAST_PREDICTION),
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        team1: m.home_name, team2: m.away_name, pHome: round(s.H), pDraw: round(s.D), pAway: round(s.A),
+        xgHome: p.sin_cuotas.expected_goals.home, xgAway: p.sin_cuotas.expected_goals.away,
+        ...(c ? { marketHome: round(c.H), marketDraw: round(c.D), marketAway: round(c.A) } : {}),
+        over25: round(p.markets.goals.over_25), btts: round(p.markets.goals.btts_yes),
+        cornersExp: p.markets.corners.expected_total, cardsExp: p.markets.cards.expected_total,
+        ...(best ? { pick: `${best.label} a cuota ${best.odds} (${best.bookmaker_title})` } : {}),
+      }),
     });
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || "Error desconocido");
-    textEl.textContent = data.analysis;
+    out.textContent = data.analysis;
     btn.textContent = "✦ Regenerar análisis";
   } catch (err) {
-    textEl.textContent = "No se pudo generar el análisis (" + err.message + "). Comprueba que GROQ_API_KEY esté configurada en Vercel.";
+    out.textContent = "No se pudo generar el análisis (" + err.message + ").";
     btn.textContent = "✦ Generar análisis con IA";
   } finally {
     btn.disabled = false;
   }
 }
 
+function renderReport(i){
+  const m = MATCHES[i];
+  const p = m.prediction;
+  const box = document.getElementById("report");
+  const xg = p.sin_cuotas.expected_goals;
+  const tabs = [["sum", "Resumen", panelSummary], ["goals", "Goles", panelGoals], ["ah", "Hándicap", panelHandicap],
+    ["corners", "Córners", (x) => panelCounts(x, "corners")], ["cards", "Tarjetas", (x) => panelCounts(x, "cards")],
+    ["picks", `Apuestas${p.picks?.length ? ` (${p.picks.length})` : ""}`, panelPicks], ["ai", "Análisis IA", panelAI]];
+  box.innerHTML = `<div style="position:relative">
+      <button class="btn secondary report-close" type="button" id="closeReport" aria-label="Cerrar informe">✕</button>
+      <div class="report-head">
+        <div class="report-team">${UI.badge(m.home_team, "lg")}${UI.esc(m.home_name)}</div>
+        <div class="report-mid">${UI.esc(UI.dateLabel(m.kickoff))}<span class="xg">${xg.home.toFixed(2)} – ${xg.away.toFixed(2)}</span>goles esperados</div>
+        <div class="report-team">${UI.badge(m.away_team, "lg")}${UI.esc(m.away_name)}</div>
+      </div>
+    </div>
+    <div class="report-body">
+      <div class="tablist" role="tablist" aria-label="Secciones del informe">
+        ${tabs.map(([id, label]) => `<button role="tab" id="tab-${id}" aria-controls="panel-${id}" type="button">${label}</button>`).join("")}
+      </div>
+      ${tabs.map(([id, , fn]) => `<div role="tabpanel" id="panel-${id}" aria-labelledby="tab-${id}" hidden>${fn(m)}</div>`).join("")}
+    </div>`;
+  box.hidden = false;
+  UI.tabs(box.querySelector(".report-body"));
+  document.getElementById("closeReport").addEventListener("click", () => { box.hidden = true; CURRENT = null; renderList(); history.replaceState(null, "", "partidos.html"); });
+  document.getElementById("aiBtn").addEventListener("click", generateAI);
+}
+
+async function openMatch(i){
+  CURRENT = i;
+  renderList();
+  const m = MATCHES[i];
+  const box = document.getElementById("report");
+  if(!m.prediction){
+    box.hidden = false;
+    box.innerHTML = `<div class="report-body"><p class="loading"><span class="spinner"></span>Calculando la predicción (el servidor del modelo puede tardar unos segundos en despertar)…</p></div>`;
+    try {
+      const res = await fetch("/api/predict", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ home_team: m.home_team, away_team: m.away_team, match_date: (m.kickoff || "").slice(0, 10), odds_event: m.odds_event }) });
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(data.error || "error del modelo");
+      m.prediction = data.data;
+    } catch (err) {
+      box.innerHTML = `<div class="report-body"><div class="callout warn">No se pudo calcular la predicción ahora mismo (${UI.esc(err.message)}). Inténtalo de nuevo en unos segundos.</div></div>`;
+      return;
+    }
+  }
+  renderReport(i);
+  history.replaceState(null, "", `partidos.html?match=${encodeURIComponent(m.match_id)}`);
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 (async () => {
-  await loadModelTeams();
-  await loadRealFixtures(LEAGUE_ID, SEASON);
+  const upcoming = await loadUpcoming();
+  if(upcoming.ok && upcoming.matches.length){
+    MATCHES = upcoming.matches;
+    document.getElementById("updatedAt").textContent = `Actualizado: ${UI.dateLabel(upcoming.generated_at)} · datos de partidos hasta el ${UI.dateLabel(upcoming.data_through, false)}`;
+  } else {
+    // Respaldo: agenda desde el proveedor de cuotas y predicción al abrir.
+    await loadModelTeams();
+    await loadAllRealOdds();
+    MATCHES = RAW_ODDS_EVENTS.slice().sort((a, b) => a.commence_time.localeCompare(b.commence_time)).map(ev => {
+      const h = resolveModelTeamName(ev.home_team)?.name || ev.home_team;
+      const a = resolveModelTeamName(ev.away_team)?.name || ev.away_team;
+      return { match_id: ev.id, kickoff: ev.commence_time, home_team: h, away_team: a, home_name: UI.teamName(h), away_name: UI.teamName(a), prediction: null, odds_event: ev };
+    });
+  }
   renderTicker();
-  renderFixturesList();
+  renderList();
 
   const params = new URLSearchParams(location.search);
-  const homeParam = params.get("home"), awayParam = params.get("away");
-  if(homeParam && awayParam){
-    const idx = DEMO_FIXTURES.findIndex(f => f.home === homeParam && f.away === awayParam);
-    if(idx !== -1) openMatch(DEMO_FIXTURES[idx], idx);
+  let idx = MATCHES.findIndex(m => m.match_id === params.get("match"));
+  if(idx < 0 && params.get("home") && params.get("away")){
+    const k = (s) => normalizeKey(s || "");
+    idx = MATCHES.findIndex(m => [m.home_team, m.home_name].map(k).includes(k(params.get("home"))) && [m.away_team, m.away_name].map(k).includes(k(params.get("away"))));
   }
+  if(idx >= 0) openMatch(idx);
 })();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>

@@ -4,19 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comparador de cuotas — Football Analytics Pro</title>
-<meta name="description" content="Compara las cuotas reales de varias casas de apuestas para los próximos partidos de LaLiga.">
+<meta name="description" content="Compara las cuotas de ~20 casas para cada partido de LaLiga: 1X2, goles y hándicap, con la cuota justa de referencia.">
+<meta name="theme-color" content="#0d1310">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="canonical" href="https://football-ai-web-self.vercel.app/cuotas.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Football Analytics Pro">
 <meta property="og:locale" content="es_ES">
 <meta property="og:title" content="Comparador de cuotas — Football Analytics Pro">
-<meta property="og:description" content="Compara las cuotas reales de varias casas de apuestas para los próximos partidos de LaLiga.">
+<meta property="og:description" content="Compara las cuotas de ~20 casas para cada partido de LaLiga: 1X2, goles y hándicap, con la cuota justa de referencia.">
 <meta property="og:url" content="https://football-ai-web-self.vercel.app/cuotas.html">
 <meta property="og:image" content="https://football-ai-web-self.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Comparador de cuotas — Football Analytics Pro">
-<meta name="twitter:description" content="Compara las cuotas reales de varias casas de apuestas para los próximos partidos de LaLiga.">
+<meta name="twitter:description" content="Compara las cuotas de ~20 casas para cada partido de LaLiga: 1X2, goles y hándicap, con la cuota justa de referencia.">
 <meta name="twitter:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,40 +31,45 @@
 <header>
   <div class="header-inner">
     <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
-    <nav>
+    <nav aria-label="Principal">
       <a href="index.html">Inicio</a>
       <a href="partidos.html">Partidos</a>
+      <a href="apuestas.html" class="highlight">Apuestas</a>
+      <a href="estadisticas.html">Resultados</a>
       <a href="cuotas.html" class="active">Cuotas</a>
-      <a href="alertas.html">Alertas</a>
       <a href="analizador.html">Analizador</a>
-      <a href="estadisticas.html">Estadísticas</a>
     </nav>
   </div>
 </header>
-
-<div class="wrap">
-  <div class="page-header">
+<main class="wrap">
+  <section class="page-header">
     <div class="eyebrow">Comparador de cuotas</div>
-    <h1>Encuentra la mejor cuota antes de apostar</h1>
-    <p class="lead">Elige un partido de la próxima jornada y compara al instante las cuotas de varias casas. La casilla en verde marca la mejor cuota disponible para cada resultado.</p>
+    <h1>Cuotas de ~20 casas, lado a lado</h1>
+    <p class="lead">Elige partido y mercado. Se marca la mejor cuota de cada columna, la cuota justa (Pinnacle sin margen) y las cuotas que pagan más de lo justo.</p>
+    <p class="updated" id="updatedAt"></p>
+  </section>
+
+  <div class="filters" style="margin-top:0">
+    <div class="field" style="min-width:280px;flex:1"><label for="matchSelect">Partido</label><select id="matchSelect"></select></div>
+    <div class="field"><label for="lineSelect">Línea</label><select id="lineSelect" disabled></select></div>
+    <label class="pill" style="cursor:pointer"><input type="checkbox" id="hideExchanges" checked style="width:auto;margin:0 6px 0 0"> Ocultar exchanges</label>
   </div>
-</div>
 
-<section class="section" style="border-top:none; padding-top:20px;">
-  <div class="wrap">
+  <div class="tablist" role="tablist" id="marketTabs" style="margin-top:18px"></div>
+  <div id="arbBanner"></div>
+  <div class="data-table-wrap"><table class="data-table" id="oddsTable"><tbody><tr><td class="loading"><span class="spinner"></span>Cargando cuotas…</td></tr></tbody></table></div>
 
-    <div class="filters-bar">
-      <div class="field" style="min-width:280px">
-        <label for="matchSelect">Partido</label>
-        <select id="matchSelect" onchange="onMatchChange()"></select>
-      </div>
-    </div>
-
-    <div id="oddsContent">
-      <div class="alerts-empty"><span class="spinner"></span>Cargando próximos partidos…</div>
-    </div>
-  </div>
-</section>
+  <details class="explain">
+    <summary>Cómo leer esta tabla</summary>
+    <ul>
+      <li><b>Cuota justa:</b> la de Pinnacle quitándole su margen. Es la referencia que usa el sistema de apuestas con valor.</li>
+      <li><b>Margen:</b> lo que se queda la casa en ese mercado (cuanto más bajo, mejor para ti).</li>
+      <li><b>Valor:</b> cuotas en verde = pagan al menos un 2% más que la cuota justa.</li>
+      <li><b>Exchanges</b> (Betfair, Matchbook): cobran comisión sobre la ganancia, así que su cuota no es comparable directamente.</li>
+      <li>Ambos marcan, córners y tarjetas solo aparecen en los partidos de las próximas 48 h (The Odds API los cobra partido a partido).</li>
+    </ul>
+  </details>
+</main>
 
 <footer>
   <div class="wrap">
@@ -71,13 +79,13 @@
         <div class="footer-col">
           <h4>Herramientas</h4>
           <a href="partidos.html">Partidos</a>
+          <a href="apuestas.html">Apuestas con valor</a>
           <a href="cuotas.html">Comparador de cuotas</a>
-          <a href="alertas.html">Alertas de valor</a>
           <a href="analizador.html">Analizador</a>
         </div>
         <div class="footer-col">
           <h4>Información</h4>
-          <a href="estadisticas.html">Estadísticas</a>
+          <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
         <div class="footer-col">
@@ -89,165 +97,129 @@
       </div>
     </div>
     <div class="responsible">
-      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica: no apuestes dinero que no puedas permitirte perder. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional (en España: <a href="https://www.jugarbien.es" rel="noopener">jugarbien.es</a>).
     </div>
   </div>
 </footer>
 
 <script src="common.js"></script>
+<script src="ui.js"></script>
 <script>
-let ACTIVE_BOOKIE_NAMES = new Set();
+const EXCHANGES = new Set(["betfair_ex_eu", "betfair_ex_uk", "matchbook", "smarkets"]);
+const MARKETS = [
+  { key: "h2h", label: "1X2", cols: (ev) => [["home", ev.home], ["draw", "Empate"], ["away", ev.away]] },
+  { key: "totals", label: "Goles", lines: true, cols: () => [["over", "Más"], ["under", "Menos"]] },
+  { key: "spreads", label: "Hándicap", lines: true, cols: (ev) => [["home", ev.home], ["away", ev.away]] },
+  { key: "btts", label: "Ambos marcan", cols: () => [["yes", "Sí"], ["no", "No"]] },
+  { key: "alternate_totals_corners", label: "Córners", lines: true, cols: () => [["over", "Más"], ["under", "Menos"]] },
+  { key: "alternate_totals_cards", label: "Tarjetas", lines: true, cols: () => [["over", "Más"], ["under", "Menos"]] },
+];
+let EVENTS = [];   // {id, home, away, kickoff, raw}
+let CUR = { ev: 0, market: "h2h", line: null };
 
-function populateMatchSelect(){
-  const select = document.getElementById("matchSelect");
-  if(DEMO_FIXTURES.length === 0){
-    select.innerHTML = `<option>Sin partidos disponibles</option>`;
-    return;
+// Normaliza las cuotas de un evento: {market: {bookKey: {title, sel: {line: price}}}}
+function parseEvent(raw){
+  const out = {};
+  for(const b of raw.bookmakers || []){
+    for(const m of b.markets || []){
+      const key = m.key === "alternate_totals" ? "totals" : m.key;
+      for(const o of m.outcomes || []){
+        let sel = null, line = o.point ?? null;
+        if(key === "h2h") sel = o.name === raw.home_team ? "home" : o.name === raw.away_team ? "away" : "draw";
+        else if(key === "spreads"){ sel = o.name === raw.home_team ? "home" : "away"; if(sel === "away") line = -line; }
+        else if(key === "btts") sel = o.name === "Yes" ? "yes" : "no";
+        else sel = o.name === "Over" ? "over" : "under";
+        out[key] ??= {}; out[key][b.key] ??= { title: b.title, prices: {} };
+        out[key][b.key].prices[`${sel}|${line}`] = o.price;
+      }
+    }
   }
-  select.innerHTML = DEMO_FIXTURES.map((f, i) =>
-    `<option value="${i}">${f.home} — ${f.away} (${f.time})</option>`
-  ).join("");
+  return out;
 }
 
-function onMatchChange(){
-  const idx = parseInt(document.getElementById("matchSelect").value, 10);
-  const fixture = DEMO_FIXTURES[idx];
-  if(fixture) loadAndRenderOdds(fixture);
+function devig(prices){
+  const inv = prices.map(p => 1 / p), s = inv.reduce((a, b) => a + b, 0);
+  return inv.map(x => x / s);
 }
 
-async function loadAndRenderOdds(fixture){
-  document.getElementById("oddsContent").innerHTML = `<div class="alerts-empty"><span class="spinner"></span>Cargando cuotas reales…</div>`;
-  await loadRealOdds(fixture.home, fixture.away, SPORT_KEY);
-
-  if(ODDS_SOURCE !== "live" || ODDS_ROWS.length === 0){
-    document.getElementById("oddsContent").innerHTML = `
-      <div class="alerts-empty">Todavía no hay cuotas reales de mercado para <b>${fixture.home} — ${fixture.away}</b>. Los proveedores suelen abrir las cuotas pocos días antes del partido — vuelve a intentarlo más tarde.</div>
-    `;
-    return;
-  }
-
-  ACTIVE_BOOKIE_NAMES = new Set(ODDS_ROWS.map(r => r.name));
-
-  document.getElementById("oddsContent").innerHTML = `
-    <div class="filters-bar">
-      <div class="field" style="min-width:220px">
-        <details class="bookie-filter" id="bookieFilterDetails">
-          <summary id="bookieFilterSummary">Filtrar casas de apuestas</summary>
-          <div class="bookie-filter-actions">
-            <button type="button" onclick="selectAllBookies()">Todas</button>
-            <button type="button" onclick="selectNoBookies()">Ninguna</button>
-          </div>
-          <div class="chip-group" id="bookieFilters"></div>
-        </details>
-      </div>
-    </div>
-    <div class="odds-table-wrap">
-      <table>
-        <thead>
-          <tr><th>Casa de apuestas</th><th>1 (Local)</th><th>X (Empate)</th><th>2 (Visitante)</th></tr>
-        </thead>
-        <tbody id="oddsBody"></tbody>
-      </table>
-    </div>
-    <div class="arb-banner" id="arbBanner"></div>
-  `;
-
-  renderBookieFilters();
-  renderOddsTable();
-}
-
-function renderBookieFilters(){
-  document.getElementById("bookieFilters").innerHTML = ODDS_ROWS.map(r => `
-    <label class="chip active" data-bookie="${r.name}">
-      <input type="checkbox" checked onchange="toggleBookie('${r.name}', this.checked)">
-      <span class="dot"></span>${r.name}
-    </label>
-  `).join("");
-  updateBookieFilterSummary();
-}
-
-function updateBookieFilterSummary(){
-  document.getElementById("bookieFilterSummary").textContent =
-    `Filtrar casas de apuestas (${ACTIVE_BOOKIE_NAMES.size} de ${ODDS_ROWS.length})`;
-}
-
-function toggleBookie(name, checked){
-  if(checked){ ACTIVE_BOOKIE_NAMES.add(name); } else { ACTIVE_BOOKIE_NAMES.delete(name); }
-  document.querySelector(`.chip[data-bookie="${name}"]`)?.classList.toggle("active", checked);
-  updateBookieFilterSummary();
-  renderOddsTable();
-}
-
-function selectAllBookies(){
-  ACTIVE_BOOKIE_NAMES = new Set(ODDS_ROWS.map(r => r.name));
-  document.querySelectorAll("#bookieFilters .chip").forEach(chip => {
-    chip.classList.add("active");
-    chip.querySelector("input").checked = true;
-  });
-  updateBookieFilterSummary();
-  renderOddsTable();
-}
-
-function selectNoBookies(){
-  ACTIVE_BOOKIE_NAMES = new Set();
-  document.querySelectorAll("#bookieFilters .chip").forEach(chip => {
-    chip.classList.remove("active");
-    chip.querySelector("input").checked = false;
-  });
-  updateBookieFilterSummary();
-  renderOddsTable();
-}
-
-function renderOddsTable(){
-  const rows = ODDS_ROWS.filter(r => ACTIVE_BOOKIE_NAMES.has(r.name));
-  if(rows.length === 0){
-    document.getElementById("oddsBody").innerHTML = `<tr><td colspan="4" style="font-family:var(--font-body); color:var(--text-muted)">Selecciona al menos una casa de apuestas.</td></tr>`;
-    document.getElementById("arbBanner").className = "arb-banner inactive";
-    document.getElementById("arbBanner").textContent = "Sin datos suficientes para calcular el arbitraje.";
-    return;
-  }
-
-  const bestHome = Math.max(...rows.map(r => r.home));
-  const bestDraw = Math.max(...rows.map(r => r.draw));
-  const bestAway = Math.max(...rows.map(r => r.away));
-
-  document.getElementById("oddsBody").innerHTML = rows.map(r => `
-    <tr>
-      <td class="bookie">${r.name}</td>
-      <td class="${r.home === bestHome ? 'best' : ''}">${r.home.toFixed(2)}</td>
-      <td class="${r.draw === bestDraw ? 'best' : ''}">${r.draw.toFixed(2)}</td>
-      <td class="${r.away === bestAway ? 'best' : ''}">${r.away.toFixed(2)}</td>
-    </tr>
-  `).join("");
-
-  const arbSum = (1 / bestHome) + (1 / bestDraw) + (1 / bestAway);
+function render(){
+  const ev = EVENTS[CUR.ev];
+  const table = document.getElementById("oddsTable");
   const banner = document.getElementById("arbBanner");
-  if(arbSum < 1){
-    const margin = ((1 - arbSum) * 100).toFixed(2);
-    banner.className = "arb-banner active";
-    banner.textContent = `Oportunidad de arbitraje detectada combinando las mejores cuotas: margen teórico +${margin}%.`;
+  if(!ev){ table.innerHTML = `<tbody><tr><td class="muted">No hay partidos con cuotas disponibles ahora mismo.</td></tr></tbody>`; return; }
+  const parsed = parseEvent(ev.raw);
+  const available = MARKETS.filter(m => parsed[m.key]);
+  if(!parsed[CUR.market]) CUR.market = "h2h";
+  document.getElementById("marketTabs").innerHTML = available.map(m =>
+    `<button role="tab" type="button" aria-selected="${m.key === CUR.market}" data-m="${m.key}">${m.label}</button>`).join("");
+  document.querySelectorAll("#marketTabs [role=tab]").forEach(b => b.addEventListener("click", () => { CUR.market = b.dataset.m; CUR.line = null; render(); }));
+
+  const market = MARKETS.find(m => m.key === CUR.market);
+  const books = parsed[CUR.market] || {};
+  const lineSelect = document.getElementById("lineSelect");
+  let lines = [null];
+  if(market.lines){
+    const counts = {};
+    Object.values(books).forEach(b => Object.keys(b.prices).forEach(k => { const l = k.split("|")[1]; counts[l] = (counts[l] || 0) + 1; }));
+    lines = Object.keys(counts).sort((a, b) => Number(a) - Number(b));
+    if(CUR.line == null || !lines.includes(String(CUR.line))) CUR.line = lines.sort((a, b) => counts[b] - counts[a])[0];
+    lines = Object.keys(counts).sort((a, b) => Number(a) - Number(b));
+    lineSelect.disabled = false;
+    lineSelect.innerHTML = lines.map(l => `<option value="${l}" ${String(l) === String(CUR.line) ? "selected" : ""}>${CUR.market === "spreads" ? `${ev.home} ${Number(l) > 0 ? "+" : ""}${l}` : l} (${counts[l]} casas)</option>`).join("");
   } else {
-    const margin = ((arbSum - 1) * 100).toFixed(2);
-    banner.className = "arb-banner inactive";
-    banner.textContent = `Sin arbitraje disponible con estas cuotas. Margen de la casa sobre el mercado: ${margin}%.`;
+    CUR.line = null; lineSelect.disabled = true; lineSelect.innerHTML = `<option>—</option>`;
   }
+  const cols = market.cols(ev);
+  const key = (sel) => `${sel}|${CUR.line == null ? "null" : CUR.line}`;
+  const hideEx = document.getElementById("hideExchanges").checked;
+  const rows = Object.entries(books)
+    .filter(([bk, b]) => cols.every(([sel]) => b.prices[key(sel)]) && !(hideEx && EXCHANGES.has(bk)))
+    .sort((a, b) => a[1].title.localeCompare(b[1].title));
+  if(rows.length === 0){
+    table.innerHTML = `<tbody><tr><td class="muted">Ninguna casa ofrece esta línea completa.</td></tr></tbody>`; banner.innerHTML = ""; return;
+  }
+  const pin = books.pinnacle && cols.every(([sel]) => books.pinnacle.prices[key(sel)]) ? devig(cols.map(([sel]) => books.pinnacle.prices[key(sel)])) : null;
+  const best = cols.map(([sel]) => Math.max(...rows.filter(([bk]) => !EXCHANGES.has(bk) && bk !== "pinnacle").map(([, b]) => b.prices[key(sel)]).concat([0])));
+  const head = `<thead><tr><th>Casa</th>${cols.map(([, label]) => `<th class="r">${UI.esc(label)}</th>`).join("")}<th class="r">Margen</th></tr></thead>`;
+  const body = rows.map(([bk, b]) => {
+    const prices = cols.map(([sel]) => b.prices[key(sel)]);
+    const margin = prices.reduce((s, p) => s + 1 / p, 0) - 1;
+    const tags = bk === "pinnacle" ? ' <span class="tag ok">referencia</span>' : EXCHANGES.has(bk) ? ' <span class="tag">exchange</span>' : "";
+    return `<tr><td>${UI.esc(b.title)}${tags}</td>${prices.map((p, i) => {
+      const isBest = p === best[i] && bk !== "pinnacle" && !EXCHANGES.has(bk);
+      const value = pin && bk !== "pinnacle" && !EXCHANGES.has(bk) && p * pin[i] - 1 >= 0.02;
+      return `<td class="r ${value ? "pos" : ""}" ${isBest ? 'style="font-weight:700;color:var(--gold)"' : ""}>${UI.odds(p)}${isBest ? " ★" : ""}</td>`;
+    }).join("")}<td class="r muted">${UI.pct(margin, 1)}</td></tr>`;
+  }).join("");
+  const fairRow = pin ? `<tr class="total"><td>Cuota justa (Pinnacle sin margen)</td>${pin.map(p => `<td class="r">${UI.odds(1 / p)}</td>`).join("")}<td class="r">0%</td></tr>` : "";
+  table.innerHTML = head + `<tbody>${body}${fairRow}</tbody>`;
+
+  const arb = best.every(x => x > 0) ? best.reduce((s, p) => s + 1 / p, 0) : 99;
+  banner.innerHTML = arb < 1
+    ? `<div class="callout info" style="margin:12px 0"><b>Posible arbitraje:</b> repartiendo el dinero entre las mejores cuotas (★) se ganaría un ${UI.pct(1 / arb - 1, 1)} pase lo que pase. Suele durar minutos y las casas pueden anular o limitar; compruébalo antes.</div>`
+    : `<p class="muted small" style="margin:12px 0">Margen combinando las mejores cuotas: ${UI.pct(arb - 1, 1)} (sin arbitraje).</p>`;
 }
+
+document.getElementById("matchSelect").addEventListener("change", (e) => { CUR = { ev: Number(e.target.value), market: CUR.market, line: null }; render(); });
+document.getElementById("lineSelect").addEventListener("change", (e) => { CUR.line = e.target.value; render(); });
+document.getElementById("hideExchanges").addEventListener("change", render);
 
 (async () => {
-  await loadRealFixtures(LEAGUE_ID, SEASON);
-  populateMatchSelect();
-
-  if(DEMO_FIXTURES.length === 0) return;
-
-  const params = new URLSearchParams(location.search);
-  const homeParam = params.get("home"), awayParam = params.get("away");
-  let idx = 0;
-  if(homeParam && awayParam){
-    const found = DEMO_FIXTURES.findIndex(f => f.home === homeParam && f.away === awayParam);
-    if(found !== -1) idx = found;
+  const upcoming = await loadUpcoming();
+  if(upcoming.ok && upcoming.matches.some(m => m.odds_event)){
+    EVENTS = upcoming.matches.filter(m => m.odds_event).map(m => ({ id: m.match_id, home: m.home_name, away: m.away_name, kickoff: m.kickoff, raw: m.odds_event }));
+    document.getElementById("updatedAt").textContent = `Cuotas descargadas: ${UI.dateLabel(upcoming.generated_at)} (se actualizan cada mañana).`;
+  } else {
+    await loadAllRealOdds();
+    EVENTS = RAW_ODDS_EVENTS.map(ev => ({ id: ev.id, home: ev.home_team, away: ev.away_team, kickoff: ev.commence_time, raw: ev }))
+      .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+    document.getElementById("updatedAt").textContent = "Cuotas en directo (solo 1X2).";
   }
-  document.getElementById("matchSelect").value = idx;
-  loadAndRenderOdds(DEMO_FIXTURES[idx]);
+  const params = new URLSearchParams(location.search);
+  const idx = EVENTS.findIndex(e => e.id === params.get("match"));
+  CUR.ev = idx >= 0 ? idx : 0;
+  document.getElementById("matchSelect").innerHTML = EVENTS.map((e, i) => `<option value="${i}" ${i === CUR.ev ? "selected" : ""}>${UI.esc(e.home)} — ${UI.esc(e.away)} · ${UI.esc(UI.dateLabel(e.kickoff))}</option>`).join("");
+  render();
 })();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>

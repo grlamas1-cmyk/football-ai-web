@@ -3,20 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Estadísticas — Football Analytics Pro</title>
-<meta name="description" content="Clasificación actualizada de LaLiga, con la forma reciente de cada equipo.">
+<title>Resultados y validación — Football Analytics Pro</title>
+<meta name="description" content="Resultados reales de las apuestas recomendadas, backtest 2019-2026 con cuotas reales, calidad del modelo y clasificación de LaLiga.">
+<meta name="theme-color" content="#0d1310">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="canonical" href="https://football-ai-web-self.vercel.app/estadisticas.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Football Analytics Pro">
 <meta property="og:locale" content="es_ES">
-<meta property="og:title" content="Estadísticas — Football Analytics Pro">
-<meta property="og:description" content="Clasificación actualizada de LaLiga, con la forma reciente de cada equipo.">
+<meta property="og:title" content="Resultados y validación — Football Analytics Pro">
+<meta property="og:description" content="Resultados reales de las apuestas recomendadas, backtest 2019-2026 con cuotas reales, calidad del modelo y clasificación de LaLiga.">
 <meta property="og:url" content="https://football-ai-web-self.vercel.app/estadisticas.html">
 <meta property="og:image" content="https://football-ai-web-self.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Estadísticas — Football Analytics Pro">
-<meta name="twitter:description" content="Clasificación actualizada de LaLiga, con la forma reciente de cada equipo.">
+<meta name="twitter:title" content="Resultados y validación — Football Analytics Pro">
+<meta name="twitter:description" content="Resultados reales de las apuestas recomendadas, backtest 2019-2026 con cuotas reales, calidad del modelo y clasificación de LaLiga.">
 <meta name="twitter:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,98 +31,102 @@
 <header>
   <div class="header-inner">
     <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
-    <nav>
+    <nav aria-label="Principal">
       <a href="index.html">Inicio</a>
       <a href="partidos.html">Partidos</a>
+      <a href="apuestas.html" class="highlight">Apuestas</a>
+      <a href="estadisticas.html" class="active">Resultados</a>
       <a href="cuotas.html">Cuotas</a>
-      <a href="alertas.html">Alertas</a>
       <a href="analizador.html">Analizador</a>
-      <a href="estadisticas.html" class="active">Estadísticas</a>
     </nav>
   </div>
 </header>
-
-<div class="wrap">
-  <div class="page-header">
-    <div class="eyebrow">Estadísticas</div>
-    <h1>Clasificación de LaLiga 2026/27</h1>
-    <p class="lead" id="statsSourceNote"><span class="spinner"></span>Cargando clasificación real…</p>
-  </div>
-</div>
-
-<section class="section" style="border-top:none; padding-top:20px;">
-  <div class="wrap">
-    <div class="odds-table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>Pts</th><th>Forma</th>
-          </tr>
-        </thead>
-        <tbody id="standingsBody"></tbody>
-      </table>
+<main class="wrap">
+  <section class="page-header">
+    <div class="eyebrow">Resultados · Validación · Clasificación</div>
+    <h1>Resultados y validación</h1>
+    <p class="lead">No basta con decir "acertó el favorito": aquí está cada apuesta recomendada, a qué cuota, cuánto se apostó y cuánto se ganó o perdió — en vivo y en el backtest histórico con cuotas reales.</p>
+    <div class="tablist" style="margin-top:22px" aria-label="Secciones">
+      <a class="pill" href="#vivo">En vivo</a>
+      <a class="pill" href="#backtest">Backtest 2019-2026</a>
+      <a class="pill" href="#modelo">Calidad del modelo</a>
+      <a class="pill" href="#predicciones">Predicciones</a>
+      <a class="pill" href="#clasificacion">Clasificación</a>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section">
-  <div class="wrap">
+  <section class="section" id="vivo">
     <div class="section-head">
-      <div class="eyebrow">Validación histórica</div>
-      <h2>Así de bien predice el modelo, con datos reales</h2>
-      <p>Antes de que exista un histórico de predicciones en vivo (ver más abajo), esto es lo que el modelo <b>sin_cuotas</b> — el que nunca ve las cuotas de mercado — acertó de verdad en el pasado. Validación temporal estricta: para cada temporada, el modelo se entrena solo con partidos anteriores a ella y se evalúa contra partidos que nunca vio. No es una promesa de resultados futuros ni de ganancias apostando — es una medida honesta de precisión predictiva.</p>
-    </div>
-    <div class="accuracy-row">
-      <div class="accuracy-tile">
-        <div class="label">Precisión media (7 temporadas reales, 2635 partidos)</div>
-        <div class="value">52.4%</div>
-        <div class="sub">Frente al 33% que daría el azar entre los 3 resultados posibles (local / empate / visitante)</div>
+      <div>
+        <div class="eyebrow">En vivo · desde noviembre de 2026</div>
+        <h2>Apuestas registradas antes de jugarse</h2>
+        <p class="muted">Cada apuesta se guarda con la cuota y la casa del momento, 48 h o menos antes del partido, y se liquida con el resultado real. No se borra ni se edita ninguna.</p>
       </div>
-      <div class="accuracy-tile">
-        <div class="label">Rango por temporada</div>
-        <div class="value">48-56%</div>
-        <div class="sub">Se mantiene consistente entre temporadas, no es un pico aislado de una sola</div>
+      <div class="bank-box"><label for="bankInput">Bank:</label><input id="bankInput" type="number" min="10" step="10" value="100"><span class="muted small">€</span></div>
+    </div>
+    <div class="kpis" id="liveKpis"></div>
+    <div id="liveChart" class="card" style="margin-top:16px"></div>
+    <div class="data-table-wrap table-scroll"><table class="data-table"><thead><tr><th>Fecha</th><th>Partido</th><th>Apuesta</th><th>Casa</th><th class="r">Cuota</th><th class="r">Stake</th><th>Resultado</th><th class="r">Beneficio</th></tr></thead><tbody id="liveBody"><tr><td colspan="8" class="loading"><span class="spinner"></span>Cargando…</td></tr></tbody></table></div>
+  </section>
+
+  <section class="section" id="backtest">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Backtest con cuotas reales</div>
+        <h2>Qué habría pasado apostando así desde 2019</h2>
+        <p class="muted" id="ruleText">Misma regla que en vivo, aplicada partido a partido con las cuotas que había de verdad y predicciones hechas solo con datos anteriores a cada partido.</p>
       </div>
     </div>
-    <div class="odds-table-wrap">
-      <table>
-        <thead>
-          <tr><th>Temporada</th><th>Partidos evaluados</th><th>Acierto (1X2)</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>2019/20</td><td>375</td><td>48.3%</td></tr>
-          <tr><td>2020/21</td><td>370</td><td>52.7%</td></tr>
-          <tr><td>2021/22</td><td>380</td><td>50.5%</td></tr>
-          <tr><td>2022/23</td><td>375</td><td>53.9%</td></tr>
-          <tr><td>2023/24</td><td>380</td><td>55.5%</td></tr>
-          <tr><td>2024/25</td><td>380</td><td>55.0%</td></tr>
-          <tr><td>2025/26</td><td>375</td><td>50.7%</td></tr>
-        </tbody>
-      </table>
+    <div class="kpis" id="btKpis"></div>
+    <div class="card" style="margin-top:16px"><h3>Beneficio acumulado (unidades: 1 u = 1% del bank)</h3><div id="btChart"></div></div>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Temporada</th><th class="r">Apuestas</th><th class="r">Acierto</th><th class="r">Apostado</th><th class="r">Beneficio</th><th class="r">ROI</th><th class="r">CLV medio</th></tr></thead><tbody id="btSeasons"></tbody></table></div>
+    <div class="callout" style="margin-top:16px" id="btHonest"></div>
+    <div class="filters">
+      <div class="field"><label for="fSeason">Temporada</label><select id="fSeason"><option value="">Todas</option></select></div>
+      <div class="field"><label for="fMarket">Mercado</label><select id="fMarket"><option value="">Todos</option><option value="1x2">Resultado (1X2)</option><option value="totals">Goles más/menos 2.5</option></select></div>
+      <div class="field"><label for="fResult">Resultado</label><select id="fResult"><option value="">Todos</option><option value="won">Acertadas</option><option value="lost">Falladas</option></select></div>
+      <span class="updated" id="fCount"></span>
     </div>
-  </div>
-</section>
+    <div class="data-table-wrap table-scroll"><table class="data-table"><thead><tr><th>Fecha</th><th>Partido</th><th>Apuesta</th><th class="r">Cuota</th><th class="r">Justa</th><th class="r">Stake</th><th>Marcador</th><th>Resultado</th><th class="r">Beneficio</th><th class="r">Acumulado</th></tr></thead><tbody id="btBody"></tbody></table></div>
+    <details class="explain"><summary>Cómo se ha hecho este backtest (y sus límites)</summary>
+      <ul>
+        <li><b>Sin mirar el futuro:</b> la probabilidad de cada partido sale de un modelo entrenado solo con temporadas anteriores (validación walk-forward).</li>
+        <li><b>Cuotas reales:</b> de football-data.co.uk. Cuota justa = Pinnacle sin margen; precio = la mejor cuota del mercado en ese momento (en vivo se usan ~20 casas europeas vía The Odds API).</li>
+        <li><b>CLV (Closing Line Value):</b> cuánto mejor fue la cuota apostada que la cuota justa de cierre de Pinnacle. Es el indicador más fiable de valor real: es mucho menos ruidoso que el beneficio a corto plazo.</li>
+        <li><b>Límites:</b> Pinnacle dejó de publicar cuotas en football-data.co.uk a mitad de 2025/26, así que ese tramo tiene muy pocas apuestas y 2026/27 se mide solo en vivo. Las casas pueden limitar a quien gana de forma sistemática. Con ~600 apuestas, un ROI de ±5% sigue estando dentro del margen de la suerte.</li>
+      </ul>
+    </details>
+  </section>
 
-<section class="section">
-  <div class="wrap">
+  <section class="section" id="modelo">
     <div class="section-head">
-      <div class="eyebrow">Histórico de aciertos</div>
-      <h2>¿Acierta el modelo de verdad?</h2>
-      <p id="historyNote"><span class="spinner"></span>Cargando histórico de predicciones…</p>
+      <div>
+        <div class="eyebrow">Calidad del modelo</div>
+        <h2>Precisión fuera de muestra, temporada a temporada</h2>
+        <p class="muted">Log loss: cuanto más bajo, mejores probabilidades (castiga estar muy seguro y fallar). El mercado es la referencia a batir: las cuotas medias de las casas sin su margen.</p>
+      </div>
     </div>
-    <div class="accuracy-row" id="accuracyRow" style="display:none"></div>
-    <div class="odds-table-wrap" id="historyTableWrap" style="display:none">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th><th>Partido</th><th>Con cuotas</th><th>Sin cuotas</th><th>Resultado real</th>
-          </tr>
-        </thead>
-        <tbody id="historyBody"></tbody>
-      </table>
+    <div class="kpis" id="modelKpis"></div>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Temporada</th><th class="r">Partidos</th><th class="r">Acierto modelo</th><th class="r">Log loss modelo</th><th class="r">Acierto mercado</th><th class="r">Log loss mercado</th></tr></thead><tbody id="modelSeasons"></tbody></table></div>
+    <div class="grid-3" style="margin-top:16px">
+      <div class="card"><h3>Calibración: victoria local</h3><div id="calib1x2"></div><p class="muted small">Cada punto agrupa partidos con probabilidad parecida. Sobre la diagonal = el modelo dice 60% y pasa el 60% de las veces.</p></div>
+      <div class="card"><h3>Córners</h3><div id="calibCorners"></div><div id="cornersText" class="muted small"></div></div>
+      <div class="card"><h3>Tarjetas</h3><div id="calibCards"></div><div id="cardsText" class="muted small"></div></div>
     </div>
-  </div>
-</section>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Mercado</th><th class="r">Log loss modelo</th><th class="r">Referencia</th><th>Qué significa</th></tr></thead><tbody id="marketsQuality"></tbody></table></div>
+  </section>
+
+  <section class="section" id="predicciones">
+    <div class="section-head"><div><div class="eyebrow">En vivo</div><h2>Predicciones guardadas antes de cada partido</h2><p class="muted" id="historyNote">Cargando…</p></div></div>
+    <div class="kpis" id="historyKpis"></div>
+    <div class="data-table-wrap table-scroll"><table class="data-table"><thead><tr><th>Fecha</th><th>Partido</th><th>Modelo propio</th><th>Mercado</th><th>Resultado</th></tr></thead><tbody id="historyBody"></tbody></table></div>
+  </section>
+
+  <section class="section" id="clasificacion">
+    <div class="section-head"><div><div class="eyebrow">LaLiga 2026/27</div><h2>Clasificación</h2><p class="muted" id="statsSourceNote">Cargando…</p></div></div>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Equipo</th><th class="r">PJ</th><th class="r">G</th><th class="r">E</th><th class="r">P</th><th class="r">GF</th><th class="r">GC</th><th class="r">Pts</th><th>Forma</th></tr></thead><tbody id="standingsBody"></tbody></table></div>
+  </section>
+</main>
 
 <footer>
   <div class="wrap">
@@ -129,13 +136,13 @@
         <div class="footer-col">
           <h4>Herramientas</h4>
           <a href="partidos.html">Partidos</a>
+          <a href="apuestas.html">Apuestas con valor</a>
           <a href="cuotas.html">Comparador de cuotas</a>
-          <a href="alertas.html">Alertas de valor</a>
           <a href="analizador.html">Analizador</a>
         </div>
         <div class="footer-col">
           <h4>Información</h4>
-          <a href="estadisticas.html">Estadísticas</a>
+          <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
         <div class="footer-col">
@@ -147,103 +154,187 @@
       </div>
     </div>
     <div class="responsible">
-      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica: no apuestes dinero que no puedas permitirte perder. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional (en España: <a href="https://www.jugarbien.es" rel="noopener">jugarbien.es</a>).
     </div>
   </div>
 </footer>
 
 <script src="common.js"></script>
+<script src="ui.js"></script>
 <script>
-function formToSpanish(form){
-  return (form || "").split("").reverse()
-    .map(c => (c === "W" ? "V" : c === "D" ? "E" : c === "L" ? "D" : c))
-    .join(" ");
-}
+let BANK = UI.readBank();
+let REPORT = null, PICKS = null;
+const RESULT_LABEL = { H: "Local", D: "Empate", A: "Visitante" };
+const kpi = (k, v, s, cls = "") => `<div class="kpi"><span class="k">${k}</span><span class="v ${cls}">${v}</span><span class="s">${s}</span></div>`;
+const tone = (x) => (x == null ? "" : x >= 0 ? "pos" : "neg");
 
-(async () => {
-  const result = await loadRealStandings(LEAGUE_ID, SEASON);
-  const note = document.getElementById("statsSourceNote");
-
-  if(!result.ok){
-    note.textContent = `No se pudo cargar la clasificación real (${result.error}). Si ya configuraste FOOTBALL_DATA_API_KEY o API_FOOTBALL_KEY, puede que tu plan no cubra la temporada actual.`;
-    document.getElementById("standingsBody").innerHTML =
-      `<tr><td colspan="10" style="font-family:var(--font-body); color:var(--text-muted)">Sin datos disponibles.</td></tr>`;
+function renderLive(){
+  if(!PICKS?.ok){
+    document.getElementById("liveBody").innerHTML = `<tr><td colspan="8" class="muted">El registro no está disponible ahora mismo.</td></tr>`;
     return;
   }
-
-  note.textContent = `Clasificación en vivo vía ${result.source}.`;
-  document.getElementById("standingsBody").innerHTML = result.table.map(row => `
-    <tr>
-      <td>${row.rank}</td>
-      <td class="bookie">${row.team.name}</td>
-      <td>${row.all.played}</td>
-      <td>${row.all.win}</td>
-      <td>${row.all.draw}</td>
-      <td>${row.all.lose}</td>
-      <td>${row.all.goals.for}</td>
-      <td>${row.all.goals.against}</td>
-      <td class="best">${row.points}</td>
-      <td>${formToSpanish(row.form) || "—"}</td>
-    </tr>
-  `).join("");
-})();
-
-const RESULT_LABEL = { H: "Local", D: "Empate", A: "Visitante" };
-
-function renderPredictionCell(model, entry){
-  const pred = entry[model].prediction;
-  const pct = Math.round(entry[model].probabilities[pred] * 100);
-  if(!entry.resolved) return `${RESULT_LABEL[pred]} (${pct}%)`;
-  const correct = entry[`${model}_correct`];
-  const cls = correct ? "history-correct" : "history-wrong";
-  const icon = correct ? "✓" : "✗";
-  return `<span class="${cls}">${icon} ${RESULT_LABEL[pred]} (${pct}%)</span>`;
+  const s = PICKS.summary;
+  const eur = (u) => UI.money(u * BANK / 100, true);
+  document.getElementById("liveKpis").innerHTML = [
+    kpi("Apuestas", s.total, `${s.settled} liquidadas · ${s.pending} pendientes`),
+    kpi("Acertadas / falladas", `${s.won} / ${s.lost}`, s.settled ? `${UI.pct(s.won / s.settled)} de acierto` : "—"),
+    kpi("Beneficio", UI.units(s.profit_units), `${eur(s.profit_units)} con un bank de ${UI.money(BANK)}`, tone(s.profit_units)),
+    kpi("ROI", s.roi == null ? "—" : UI.signedPct(s.roi), "beneficio / dinero apostado", tone(s.roi)),
+    kpi("CLV medio", s.avg_clv == null ? "—" : UI.signedPct(s.avg_clv), "frente a la cuota justa cerca del partido", tone(s.avg_clv)),
+  ].join("");
+  const settled = PICKS.picks.filter(p => p.status !== "pending").sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+  let acc = 0;
+  const series = settled.map(p => ({ x: UI.dateLabel(p.kickoff, false), y: (acc += p.profit_units || 0) }));
+  document.getElementById("liveChart").innerHTML = settled.length >= 2
+    ? `<h3>Beneficio acumulado (unidades)</h3>${UI.lineChart([{ x: "inicio", y: 0 }, ...series], { yFormat: (v) => `${v.toFixed(1)} u` })}`
+    : `<p class="muted">El registro en vivo empezó en noviembre de 2026: el gráfico aparecerá en cuanto haya al menos dos apuestas liquidadas. Mientras tanto, el <a href="#backtest">backtest</a> muestra cómo se habría comportado la misma regla desde 2019.</p>`;
+  document.getElementById("liveBody").innerHTML = PICKS.picks.length
+    ? PICKS.picks.map(p => `<tr>
+        <td>${UI.esc(UI.dateLabel(p.kickoff))}</td>
+        <td>${UI.esc(p.home_name || UI.teamName(p.home_team))} — ${UI.esc(p.away_name || UI.teamName(p.away_team))}</td>
+        <td>${UI.esc(p.label)}${p.experimental ? ' <span class="tag warn">exp.</span>' : ""}</td>
+        <td>${UI.esc(p.bookmaker_title)}</td>
+        <td class="r">${UI.odds(p.odds)}</td>
+        <td class="r">${p.stake_pct.toFixed(2)} u · ${UI.money(p.stake_pct * BANK / 100)}</td>
+        <td>${UI.resultChip(p.status)}${p.score ? ` <span class="muted small">${UI.esc(p.score)}</span>` : ""}</td>
+        <td class="r ${tone(p.profit_units)}">${p.status === "pending" ? "—" : `${UI.units(p.profit_units)} · ${eur(p.profit_units)}`}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="8" class="muted">Todavía no hay apuestas registradas. Se registran solas cada mañana para los partidos de las 48 h siguientes cuando hay valor.</td></tr>`;
 }
 
-(async () => {
+function renderBacktest(){
+  const b = REPORT.betting;
+  document.getElementById("ruleText").textContent = `${b.rule_description} Misma regla que en vivo, aplicada partido a partido con las cuotas que había de verdad y predicciones hechas solo con datos anteriores a cada partido.`;
+  document.getElementById("btKpis").innerHTML = [
+    kpi("Apuestas", b.all.n, `${b.all.won} acertadas · ${b.all.lost} falladas`),
+    kpi("Beneficio", UI.units(b.all.profit_units, 1), `${UI.money(b.all.profit_units * BANK / 100, true)} con un bank de ${UI.money(BANK)}`, tone(b.all.profit_units)),
+    kpi("ROI total", UI.signedPct(b.all.roi_staked), `validación ${UI.signedPct(b.validation.roi_staked)} · test ${UI.signedPct(b.test.roi_staked)}`, tone(b.all.roi_staked)),
+    kpi("Baten el cierre", UI.pct(b.all.clv_positive_share), `CLV medio ${UI.signedPct(b.all.avg_clv)}`, "pos"),
+    kpi("Cuota media", UI.odds(b.all.avg_odds), `${UI.pct(b.all.hit_rate)} de acierto`),
+  ].join("");
+  document.getElementById("btChart").innerHTML = UI.lineChart(
+    b.cumulative.filter((_, i, arr) => i % Math.max(1, Math.floor(arr.length / 160)) === 0 || i === arr.length - 1).map(p => ({ x: p.date.slice(0, 7), y: p.profit_units })),
+    { yFormat: (v) => `${v.toFixed(1)} u` });
+  document.getElementById("btSeasons").innerHTML = b.by_season.filter(s => s.n > 0).map(s => `<tr>
+      <td>${s.season}${b.validation_seasons.includes(s.season) ? ' <span class="tag">validación</span>' : ' <span class="tag ok">test</span>'}</td>
+      <td class="r">${s.n}</td><td class="r">${UI.pct(s.hit_rate)}</td><td class="r">${s.staked_units.toFixed(1)} u</td><td class="r ${tone(s.profit_units)}">${UI.units(s.profit_units, 1)}</td>
+      <td class="r ${tone(s.roi_staked)}">${UI.signedPct(s.roi_staked)}</td><td class="r">${s.avg_clv == null ? "—" : UI.signedPct(s.avg_clv)}</td></tr>`).join("")
+    + `<tr class="total"><td>Total</td><td class="r">${b.all.n}</td><td class="r">${UI.pct(b.all.hit_rate)}</td><td class="r">${b.all.staked_units.toFixed(1)} u</td><td class="r ${tone(b.all.profit_units)}">${UI.units(b.all.profit_units, 1)}</td><td class="r">${UI.signedPct(b.all.roi_staked)}</td><td class="r">${UI.signedPct(b.all.avg_clv)}</td></tr>`;
+  const se = b.all.roi_flat_se;
+  const word = (r) => (r > 0.02 ? "positivo" : r < -0.02 ? "negativo" : "prácticamente plano");
+  document.getElementById("btHonest").innerHTML = `<b>Lectura honesta:</b> el resultado es ${word(b.all.roi_staked)} en el conjunto (${UI.signedPct(b.all.roi_staked)}), ${word(b.validation.roi_staked)} en el tramo con el que se eligió la regla (${UI.signedPct(b.validation.roi_staked)}) y ${word(b.test.roi_staked)} en el tramo de comprobación (${UI.signedPct(b.test.roi_staked)}). Con estas muestras el margen de error del ROI es de ±${(se * 200).toFixed(0)} puntos, así que <b>no está demostrado que gane dinero a largo plazo</b>. Lo que sí se repite es que el ${UI.pct(b.all.clv_positive_share)} de las apuestas consigue mejor cuota que la justa de cierre (CLV medio ${UI.signedPct(b.all.avg_clv)}), que es lo que caracteriza a las estrategias con ventaja real.`;
+
+  const seasons = [...new Set(b.bets.map(x => x.season))];
+  document.getElementById("fSeason").innerHTML = `<option value="">Todas</option>` + seasons.map(s => `<option>${s}</option>`).join("");
+  ["fSeason", "fMarket", "fResult"].forEach(id => document.getElementById(id).addEventListener("change", renderBets));
+  renderBets();
+}
+
+function renderBets(){
+  const b = REPORT.betting;
+  const fs = document.getElementById("fSeason").value, fm = document.getElementById("fMarket").value, fr = document.getElementById("fResult").value;
+  let acc = 0;
+  const rows = b.bets.slice().sort((x, y) => x.date.localeCompare(y.date))
+    .filter(x => (!fs || x.season === fs) && (!fm || x.market === fm) && (!fr || x.result === fr))
+    .map(x => ({ ...x, cum: (acc += x.profit_units) }));
+  document.getElementById("fCount").textContent = `${rows.length} apuestas · ${UI.units(acc, 1)}`;
+  document.getElementById("btBody").innerHTML = rows.reverse().map(x => `<tr>
+      <td>${x.date}</td><td>${UI.esc(UI.teamName(x.home_team))} — ${UI.esc(UI.teamName(x.away_team))}</td><td>${UI.esc(x.label)}</td>
+      <td class="r">${UI.odds(x.odds)}</td><td class="r">${UI.odds(x.fair_odds)}</td><td class="r">${x.stake_pct.toFixed(2)} u</td>
+      <td>${x.score}</td><td>${UI.resultChip(x.result)}</td><td class="r ${tone(x.profit_units)}">${UI.units(x.profit_units)}</td><td class="r">${UI.units(x.cum, 1)}</td></tr>`).join("");
+}
+
+function renderModel(){
+  const m = REPORT.model, pooled = m.pooled_complete_seasons, prev = m.previous_model_reference;
+  document.getElementById("modelKpis").innerHTML = [
+    kpi("Acierto 1X2", UI.pct(pooled.accuracy, 1), `${pooled.n} partidos 2019-2026 · mercado ${UI.pct(pooled.market.accuracy, 1)}`),
+    kpi("Log loss", pooled.log_loss.toFixed(4), `modelo anterior ${prev.log_loss.toFixed(4)} · mercado ${pooled.market.log_loss.toFixed(4)}`),
+    kpi("Frente al modelo anterior", `${prev.log_loss - pooled.log_loss >= 0 ? "−" : "+"}${Math.abs(prev.log_loss - pooled.log_loss).toFixed(4)}`, `de log loss · acierto ${UI.signedPct(pooled.accuracy - prev.accuracy)}`, tone(prev.log_loss - pooled.log_loss)),
+  ].join("");
+  document.getElementById("modelSeasons").innerHTML = m.seasons.map(s => `<tr>
+      <td>${s.season}${s.complete ? "" : ' <span class="tag">en curso</span>'}</td><td class="r">${s.n}</td>
+      <td class="r">${UI.pct(s.accuracy, 1)}</td><td class="r">${s.log_loss.toFixed(4)}</td>
+      <td class="r">${s.market ? UI.pct(s.market.accuracy, 1) : "—"}</td><td class="r">${s.market ? s.market.log_loss.toFixed(4) : "—"}</td></tr>`).join("");
+  document.getElementById("calib1x2").innerHTML = UI.calibrationChart(m.calibration_home_win, { label: "victoria local" });
+  const lineInfo = (c, line) => c.lines.find(l => l.line === line) || c.lines[1];
+  const corners = REPORT.counts.corners, cards = REPORT.counts.cards;
+  const c95 = lineInfo(corners, 9.5), k45 = lineInfo(cards, 4.5);
+  document.getElementById("calibCorners").innerHTML = UI.calibrationChart(c95.calibration, { label: "más de 9.5 córners" });
+  document.getElementById("cornersText").textContent = `Más de 9.5 córners. Media real ${corners.mean_actual.toFixed(1)} por partido; correlación predicho-real ${corners.correlation.toFixed(2)}: los córners se anticipan poco.`;
+  document.getElementById("calibCards").innerHTML = UI.calibrationChart(k45.calibration, { label: "más de 4.5 tarjetas" });
+  document.getElementById("cardsText").textContent = `Más de 4.5 tarjetas. Media real ${cards.mean_actual.toFixed(1)} por partido; correlación ${cards.correlation.toFixed(2)}, el doble que en córners.`;
+  const g = REPORT.goals;
+  const row = (name, model, ref, refName, text) => `<tr><td>${name}</td><td class="r">${model.toFixed(4)}</td><td class="r">${ref == null ? "—" : `${ref.toFixed(4)} <span class="muted small">${refName}</span>`}</td><td class="muted wrap">${text}</td></tr>`;
+  document.getElementById("marketsQuality").innerHTML = [
+    row("Más/menos 2.5 goles", g.over25.model_log_loss, g.over25.market_log_loss, "mercado", g.over25.model_log_loss <= g.over25.market_log_loss ? "Mejor que las casas." : "Las casas siguen siendo más precisas: por eso las apuestas se eligen contra su cuota justa."),
+    row("Ambos marcan", g.btts.model_log_loss, null, "", "Sin cuotas históricas fiables para comparar."),
+    ...corners.lines.map(l => row(`Córners más/menos ${l.line}`, l.model_log_loss, l.naive_log_loss, "media liga", l.model_log_loss < l.naive_log_loss ? "Mejora a usar la media de la liga." : "No mejora a la media de la liga.")),
+    ...cards.lines.map(l => row(`Tarjetas más/menos ${l.line}`, l.model_log_loss, l.naive_log_loss, "media liga", l.model_log_loss < l.naive_log_loss ? "Mejora a usar la media de la liga." : "No mejora a la media de la liga.")),
+  ].join("");
+}
+
+async function renderHistory(){
+  const data = await loadPredictionHistory();
   const note = document.getElementById("historyNote");
-  try {
-    const res = await fetch("/api/predictions-history");
-    const json = await res.json();
-    if(!res.ok || !json.ok) throw new Error(json.error || `estado ${res.status}`);
+  if(!data.ok){ note.textContent = `No se pudo cargar el histórico (${data.error}).`; return; }
+  note.textContent = data.resolved_count
+    ? `${data.resolved_count} de ${data.total} predicciones ya comparadas con el resultado real. Acertar el resultado más probable da poca información por sí solo — lo importante está en las apuestas de arriba.`
+    : "Todavía no hay predicciones resueltas.";
+  document.getElementById("historyKpis").innerHTML = [
+    kpi("Modelo propio", UI.pct(data.accuracy.sin_cuotas), `acierto en ${data.resolved_count} partidos`),
+    kpi("Mercado", UI.pct(data.accuracy.con_cuotas), "favorito de las casas"),
+  ].join("");
+  const cell = (entry, key) => {
+    const m = entry[key];
+    if(!m) return "—";
+    const p = Math.round(m.probabilities[m.prediction] * 100);
+    if(!entry.resolved) return `${RESULT_LABEL[m.prediction]} (${p}%)`;
+    const ok = entry[`${key}_correct`];
+    return `<span class="${ok ? "pos" : "neg"}">${ok ? "✓" : "✗"} ${RESULT_LABEL[m.prediction]} (${p}%)</span>`;
+  };
+  document.getElementById("historyBody").innerHTML = data.history.map(e => `<tr>
+      <td>${UI.esc(e.match_date)}</td><td>${UI.esc(UI.teamName(e.home_team))} — ${UI.esc(UI.teamName(e.away_team))}</td>
+      <td>${cell(e, "sin_cuotas")}</td><td>${cell(e, "con_cuotas")}</td>
+      <td>${e.resolved ? `${RESULT_LABEL[e.actual_result]} (${e.actual_home_goals}-${e.actual_away_goals})` : '<span class="chip-result pending">Pendiente</span>'}</td></tr>`).join("");
+}
 
-    if(json.resolved_count === 0){
-      note.textContent = json.total > 0
-        ? "Ya hay predicciones guardadas, pero ninguna se ha podido comparar todavía contra un resultado real."
-        : "Todavía no hay histórico — el modelo empieza a guardar una predicción de cada partido antes de que se juegue, y aquí se irá viendo si acierta o no según se vayan jugando.";
-      return;
-    }
-
-    note.textContent = `${json.resolved_count} predicción${json.resolved_count === 1 ? "" : "es"} ya comparada${json.resolved_count === 1 ? "" : "s"} contra el resultado real.`;
-
-    document.getElementById("accuracyRow").style.display = "grid";
-    document.getElementById("accuracyRow").innerHTML = `
-      <div class="accuracy-tile">
-        <div class="label">Con cuotas (mercado)</div>
-        <div class="value">${json.accuracy.con_cuotas != null ? Math.round(json.accuracy.con_cuotas * 100) + "%" : "—"}</div>
-        <div class="sub">de acierto sobre ${json.resolved_count} partidos resueltos</div>
-      </div>
-      <div class="accuracy-tile">
-        <div class="label">Sin cuotas (independiente)</div>
-        <div class="value">${json.accuracy.sin_cuotas != null ? Math.round(json.accuracy.sin_cuotas * 100) + "%" : "—"}</div>
-        <div class="sub">de acierto sobre ${json.resolved_count} partidos resueltos</div>
-      </div>
-    `;
-
-    document.getElementById("historyTableWrap").style.display = "block";
-    document.getElementById("historyBody").innerHTML = json.history.slice(0, 30).map(entry => `
-      <tr>
-        <td>${entry.match_date}</td>
-        <td class="bookie">${entry.home_team} — ${entry.away_team}</td>
-        <td>${renderPredictionCell("con_cuotas", entry)}</td>
-        <td>${renderPredictionCell("sin_cuotas", entry)}</td>
-        <td>${entry.resolved ? `${RESULT_LABEL[entry.actual_result]} (${entry.actual_home_goals}-${entry.actual_away_goals})` : "Pendiente de jugarse"}</td>
-      </tr>
-    `).join("");
-  } catch (error) {
-    note.textContent = `No se pudo cargar el histórico de predicciones (${error.message}).`;
+async function renderStandings(){
+  const result = await loadRealStandings();
+  const note = document.getElementById("statsSourceNote");
+  if(!result.ok){
+    note.textContent = `No se pudo cargar la clasificación (${result.error}).`;
+    return;
   }
+  note.textContent = `Clasificación en vivo vía ${result.source}.`;
+  const form = (f) => (f || "").replace(/,/g, "").split("").reverse().map(c => {
+    const map = { W: ["V", "pos"], D: ["E", ""], L: ["D", "neg"] }[c];
+    return map ? `<b class="${map[1]}">${map[0]}</b>` : "";
+  }).join(" ");
+  document.getElementById("standingsBody").innerHTML = result.table.map(row => `<tr>
+      <td>${row.rank}</td><td>${UI.esc(row.team.name)}</td><td class="r">${row.all.played}</td><td class="r">${row.all.win}</td>
+      <td class="r">${row.all.draw}</td><td class="r">${row.all.lose}</td><td class="r">${row.all.goals.for}</td><td class="r">${row.all.goals.against}</td>
+      <td class="r"><b>${row.points}</b></td><td>${form(row.form) || "—"}</td></tr>`).join("");
+}
+
+document.getElementById("bankInput").value = BANK;
+document.getElementById("bankInput").addEventListener("input", (e) => {
+  const v = Number(e.target.value);
+  if(Number.isFinite(v) && v > 0){ BANK = v; UI.writeBank(v); renderLive(); if(REPORT) renderBacktest(); }
+});
+
+(async () => {
+  [REPORT, PICKS] = await Promise.all([loadReport(), loadPicks()]);
+  renderLive();
+  if(REPORT.ok){ renderBacktest(); renderModel(); }
+  else {
+    document.getElementById("btKpis").innerHTML = `<div class="empty">El informe del backtest no está disponible ahora mismo.</div>`;
+  }
+  // Los datos llegan después de que el navegador salte al ancla (#backtest...),
+  // así que se vuelve a colocar la sección cuando ya tiene su altura real.
+  if(location.hash) document.querySelector(location.hash)?.scrollIntoView();
 })();
+renderHistory();
+renderStandings();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>

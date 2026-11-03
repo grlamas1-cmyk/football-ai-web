@@ -290,63 +290,69 @@ async function loadAllRealOdds(sportKey = SPORT_KEY){
   }
 }
 
-async function loadRealFixtures(leagueId = LEAGUE_ID, season = SEASON){
-  let gotRealFixtures = false;
+// Agenda de la próxima jornada. Fuente principal: /api/upcoming (lo
+// prepara cada mañana el job del backend, con la predicción ya hecha).
+// Si no está disponible, se cae a los partidos que trae el proveedor de
+// cuotas. (La antigua llamada a API-Football se eliminó: su plan gratuito
+// no cubre la temporada en curso y fallaba siempre.)
+async function loadRealFixtures(){
+  const toFixture = (iso, home, away, extra = {}) => {
+    const d = new Date(iso);
+    const dayName = d.toLocaleDateString("es-ES", { weekday: "long" });
+    return {
+      day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+      time: d.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "") + " " +
+            d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
+      home, away, comp: "LaLiga", liga: "LaLiga",
+      isoDate: iso ? iso.slice(0, 10) : null, kickoff: iso, ...extra,
+    };
+  };
+
+  const upcoming = await loadUpcoming();
+  if(upcoming.ok && upcoming.matches.length > 0){
+    DEMO_FIXTURES = upcoming.matches.map(m => toFixture(m.kickoff, m.home_name || m.home_team, m.away_name || m.away_team, { matchId: m.match_id, upcoming: m }));
+    return true;
+  }
 
   try {
-    const res = await fetch(`/api/matches?league=${leagueId}&season=${season}&next=10`);
-    const data = await res.json();
-    if(!res.ok || !data.ok) throw new Error(data.error || "API de calendario no disponible");
-
-    const fixtures = (data.data.response || []).map(f => {
-      const d = new Date(f.fixture.date);
-      const dayName = d.toLocaleDateString("es-ES", { weekday: "long" });
-      return {
-        day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
-        time: d.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "") + " " +
-              d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-        home: f.teams.home.name,
-        away: f.teams.away.name,
-        comp: `${f.league.name} · J.${String(f.league.round).replace(/\D/g, "") || "-"}`,
-        liga: f.league.name,
-        isoDate: f.fixture.date ? f.fixture.date.slice(0, 10) : null,
-      };
-    });
-
-    if(fixtures.length === 0) throw new Error("Sin partidos próximos devueltos por la API");
-    DEMO_FIXTURES = fixtures;
-    gotRealFixtures = true;
+    await loadAllRealOdds(SPORT_KEY);
+    if(RAW_ODDS_EVENTS.length === 0) throw new Error("Sin partidos devueltos por el proveedor de cuotas");
+    DEMO_FIXTURES = RAW_ODDS_EVENTS
+      .map(ev => toFixture(ev.commence_time, ev.home_team, ev.away_team, { matchId: ev.id }))
+      .sort((a, b) => (a.kickoff || "").localeCompare(b.kickoff || "")).slice(0, 12);
+    return true;
   } catch (err) {
-    console.warn("Calendario vía API-Football no disponible (motivo: " + err.message + ")");
+    console.warn("Sin agenda disponible (motivo: " + err.message + ")");
+    return false;
   }
-
-  if(!gotRealFixtures){
-    try {
-      await loadAllRealOdds(SPORT_KEY);
-      if(RAW_ODDS_EVENTS.length === 0) throw new Error("Sin partidos devueltos por el proveedor de cuotas");
-
-      DEMO_FIXTURES = RAW_ODDS_EVENTS.map(ev => {
-        const d = new Date(ev.commence_time);
-        const dayName = d.toLocaleDateString("es-ES", { weekday: "long" });
-        return {
-          day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
-          time: d.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "") + " " +
-                d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-          home: ev.home_team,
-          away: ev.away_team,
-          comp: "LaLiga",
-          liga: "LaLiga",
-          isoDate: ev.commence_time ? ev.commence_time.slice(0, 10) : null,
-        };
-      }).sort((a, b) => (a.isoDate || "").localeCompare(b.isoDate || "")).slice(0, 12);
-      gotRealFixtures = true;
-    } catch (err) {
-      console.warn("Calendario en demo (tampoco hay partidos vía cuotas; motivo: " + err.message + ")");
-    }
-  }
-
-  return gotRealFixtures;
 }
+
+/* ---------------------------------------------------------
+   Datos que prepara el job diario del backend (vía /api/*).
+   Todas devuelven {ok, ...} y nunca lanzan: cada página decide qué
+   enseñar si algo no está disponible (sin inventar nada).
+--------------------------------------------------------- */
+async function fetchJson(url){
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!res.ok || data.ok === false) return { ok: false, error: data.error || `Error ${res.status}` };
+    return { ok: true, ...data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+let UPCOMING_CACHE = null;
+async function loadUpcoming(){
+  if(UPCOMING_CACHE) return UPCOMING_CACHE;
+  const data = await fetchJson("/api/upcoming");
+  UPCOMING_CACHE = data.ok ? { ...data, matches: data.matches || [] } : { ok: false, error: data.error, matches: [] };
+  return UPCOMING_CACHE;
+}
+const loadPicks = () => fetchJson("/api/picks");
+const loadReport = () => fetchJson("/api/report");
+const loadPredictionHistory = () => fetchJson("/api/predictions-history");
 
 /* ---------------------------------------------------------
    Cuotas reales de un partido concreto (comparador de casas).

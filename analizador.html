@@ -4,19 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analizador de apuestas — Football Analytics Pro</title>
-<meta name="description" content="Escribe tu apuesta sobre un próximo partido de LaLiga y calcula si tiene valor.">
+<meta name="description" content="Escribe tu apuesta en lenguaje natural (1X2, goles, ambos marcan, córners, tarjetas) y calcula si tiene valor y cuánto apostar.">
+<meta name="theme-color" content="#0d1310">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="canonical" href="https://football-ai-web-self.vercel.app/analizador.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Football Analytics Pro">
 <meta property="og:locale" content="es_ES">
 <meta property="og:title" content="Analizador de apuestas — Football Analytics Pro">
-<meta property="og:description" content="Escribe tu apuesta sobre un próximo partido de LaLiga y calcula si tiene valor.">
+<meta property="og:description" content="Escribe tu apuesta en lenguaje natural (1X2, goles, ambos marcan, córners, tarjetas) y calcula si tiene valor y cuánto apostar.">
 <meta property="og:url" content="https://football-ai-web-self.vercel.app/analizador.html">
 <meta property="og:image" content="https://football-ai-web-self.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Analizador de apuestas — Football Analytics Pro">
-<meta name="twitter:description" content="Escribe tu apuesta sobre un próximo partido de LaLiga y calcula si tiene valor.">
+<meta name="twitter:description" content="Escribe tu apuesta en lenguaje natural (1X2, goles, ambos marcan, córners, tarjetas) y calcula si tiene valor y cuánto apostar.">
 <meta name="twitter:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,84 +31,63 @@
 <header>
   <div class="header-inner">
     <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
-    <nav>
+    <nav aria-label="Principal">
       <a href="index.html">Inicio</a>
       <a href="partidos.html">Partidos</a>
+      <a href="apuestas.html" class="highlight">Apuestas</a>
+      <a href="estadisticas.html">Resultados</a>
       <a href="cuotas.html">Cuotas</a>
-      <a href="alertas.html">Alertas</a>
       <a href="analizador.html" class="active">Analizador</a>
-      <a href="estadisticas.html">Estadísticas</a>
     </nav>
   </div>
 </header>
-
-<div class="wrap">
-  <div class="page-header">
+<main class="wrap">
+  <section class="page-header">
     <div class="eyebrow">Analizador de apuestas</div>
-    <h1>Calcula si una apuesta tiene valor</h1>
-    <p class="lead">Escribe tu apuesta sobre un partido de la <b>próxima jornada de LaLiga</b> con tus propias palabras (ej. "Real Madrid gana a Barcelona a cuota 1.85", "Getafe puntúa en casa del Osasuna", o incluso "¿qué cuota sería buena para que gane el Osasuna?") y calculamos el valor al instante con el modelo independiente y las cuotas reales de mercado — no hace falta escribir la probabilidad a mano, y tampoco hace falta dar una cuota si solo quieres saber cuál sería justa.</p>
-  </div>
-</div>
+    <h1>¿Tiene valor tu apuesta?</h1>
+    <p class="lead">Escríbela con tus palabras sobre un partido de la próxima jornada. Ejemplos: <i>"Sevilla gana al Alavés a 1.95"</i>, <i>"más de 2.5 goles en el Valencia-Real Madrid a 1.80"</i>, <i>"ambos marcan en el Celta-Levante"</i>, <i>"más de 9.5 córners en el Atlético-Barça a 2.10"</i>, <i>"menos de 4.5 tarjetas en el Espanyol-Deportivo"</i>. Si no pones cuota, te decimos a partir de qué cuota tendría valor.</p>
+  </section>
 
-<section class="section" style="border-top:none; padding-top:20px;">
-  <div class="wrap">
-
-    <div class="panel" style="margin-bottom:20px">
-      <h3>Tu apuesta</h3>
-      <div class="field">
-        <label for="betText">Escríbela con tus propias palabras</label>
-        <textarea id="betText" rows="2" placeholder="Real Madrid gana a Barcelona a cuota 1.85"></textarea>
-      </div>
-      <div class="predict-actions">
-        <button class="btn" onclick="parseNaturalBet()">Interpretar y calcular</button>
-      </div>
-      <div class="predict-status" id="betParseStatus"></div>
+  <div class="panel" style="margin-bottom:20px">
+    <div class="field">
+      <label for="betText">Tu apuesta</label>
+      <textarea id="betText" rows="2" placeholder="Más de 2.5 goles en el Valencia-Real Madrid a 1.80"></textarea>
     </div>
-
-    <div class="analyzer-grid">
-      <div class="panel">
-        <h3>Datos de la apuesta</h3>
-        <div class="field-grid">
-          <div class="field">
-            <label for="oddInput">Cuota ofrecida</label>
-            <input id="oddInput" type="number" step="0.01" min="1.01" value="2.10">
-          </div>
-          <div class="field">
-            <label for="probInput">Probabilidad estimada (%)</label>
-            <input id="probInput" type="number" step="1" min="1" max="99" value="52">
-          </div>
-          <div class="field">
-            <label for="bankInput">Bankroll (€)</label>
-            <input id="bankInput" type="number" step="10" min="0" value="500">
-          </div>
-          <div class="field">
-            <label for="kellyFraction">Fracción de Kelly</label>
-            <select id="kellyFraction">
-              <option value="1">Completo (agresivo)</option>
-              <option value="0.5" selected>Medio (equilibrado)</option>
-              <option value="0.25">Cuarto (conservador)</option>
-            </select>
-          </div>
-        </div>
-        <div class="odds-hint">La probabilidad se rellena sola al interpretar tu apuesta arriba. Solo tócala a mano si quieres probar un escenario distinto.</div>
-        <div class="predict-actions">
-          <button class="btn" onclick="analyzeBet()">Calcular valor</button>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Resultado del análisis</h3>
-        <div class="analyzer-output" id="analyzerOutput">
-          <div class="out-row"><span>Probabilidad implícita de la cuota</span><span class="val" id="outImplied">—</span></div>
-          <div class="out-row"><span>Margen de valor (edge)</span><span class="val" id="outEdge">—</span></div>
-          <div class="out-row highlight"><span>Stake recomendado</span><span class="val" id="outStake">—</span></div>
-          <div class="out-row"><span>Beneficio potencial</span><span class="val" id="outProfit">—</span></div>
-        </div>
-      </div>
-    </div>
-
+    <div class="predict-actions"><button class="btn" id="parseBtn" type="button">Analizar</button></div>
+    <div class="predict-status" id="betParseStatus" aria-live="polite"></div>
   </div>
-</section>
+
+  <div id="verdict"></div>
+
+  <div class="analyzer-grid" style="margin-top:20px">
+    <div class="panel">
+      <h3>Calculadora (Kelly)</h3>
+      <div class="field-grid">
+        <div class="field"><label for="oddInput">Cuota ofrecida</label><input id="oddInput" type="number" step="0.01" min="1.01" value="2.10"></div>
+        <div class="field"><label for="probInput">Probabilidad real (%)</label><input id="probInput" type="number" step="0.1" min="1" max="99" value="50"></div>
+        <div class="field"><label for="bankInput">Bank (€)</label><input id="bankInput" type="number" step="10" min="0" value="100"></div>
+        <div class="field"><label for="kellyFraction">Fracción de Kelly</label>
+          <select id="kellyFraction">
+            <option value="1">Completo (muy agresivo)</option>
+            <option value="0.5">Medio</option>
+            <option value="0.25" selected>Cuarto (el que usa el sistema)</option>
+          </select>
+        </div>
+      </div>
+      <div class="odds-hint">La probabilidad se rellena sola al analizar arriba (con la cuota justa del mercado si existe, si no con el modelo). Cámbiala para probar otros escenarios.</div>
+    </div>
+    <div class="panel">
+      <h3>Resultado</h3>
+      <div class="analyzer-output">
+        <div class="out-row"><span>Probabilidad implícita de la cuota</span><span class="val" id="outImplied">—</span></div>
+        <div class="out-row"><span>Valor esperado por euro</span><span class="val" id="outEdge">—</span></div>
+        <div class="out-row highlight"><span>Stake recomendado</span><span class="val" id="outStake">—</span></div>
+        <div class="out-row"><span>Beneficio si se acierta</span><span class="val" id="outProfit">—</span></div>
+      </div>
+      <p class="muted small" style="margin-top:12px">El sistema limita cada apuesta al 2,5% del bank aunque Kelly pida más.</p>
+    </div>
+  </div>
+</main>
 
 <footer>
   <div class="wrap">
@@ -115,13 +97,13 @@
         <div class="footer-col">
           <h4>Herramientas</h4>
           <a href="partidos.html">Partidos</a>
+          <a href="apuestas.html">Apuestas con valor</a>
           <a href="cuotas.html">Comparador de cuotas</a>
-          <a href="alertas.html">Alertas de valor</a>
           <a href="analizador.html">Analizador</a>
         </div>
         <div class="footer-col">
           <h4>Información</h4>
-          <a href="estadisticas.html">Estadísticas</a>
+          <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
         <div class="footer-col">
@@ -133,219 +115,205 @@
       </div>
     </div>
     <div class="responsible">
-      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica: no apuestes dinero que no puedas permitirte perder. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional (en España: <a href="https://www.jugarbien.es" rel="noopener">jugarbien.es</a>).
     </div>
   </div>
 </footer>
 
 <script src="common.js"></script>
+<script src="ui.js"></script>
 <script>
-// Busca, entre los próximos partidos reales, uno cuyos dos equipos
-// coincidan con los resueltos (en cualquier orden). No tiene sentido
-// analizar una apuesta sobre un partido que no se va a jugar.
-function findFixtureForTeams(nameA, nameB){
-  return DEMO_FIXTURES.find(f => {
-    const fh = resolveModelTeamName(f.home).name;
-    const fa = resolveModelTeamName(f.away).name;
-    return (fh === nameA && fa === nameB) || (fh === nameB && fa === nameA);
-  }) || null;
+let MATCHES = [];
+const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const lineKey = (l) => String(l).replace(".", "");
+
+// Mercado de la frase: goles/córners/tarjetas (más/menos de X), ambos
+// marcan, o resultado (1X2 / doble oportunidad, reglas de siempre).
+function parseMarket(text){
+  const t = norm(text);
+  const ou = t.match(/\b(mas|menos|over|under)\s*(?:de\s*)?(\d{1,2})(?:[.,](\d))?\s*(goles?|corners?|corneres|saques de esquina|tarjetas?|amarillas)?/);
+  if(ou && (ou[4] || /\b(over|under)\b/.test(ou[1]))){
+    const noun = ou[4] || "goles";
+    const market = /gol/.test(noun) ? "totals" : /tarjet|amarill/.test(noun) ? "cards" : "corners";
+    const over = /mas|over/.test(ou[1]);
+    let line = Number(`${ou[2]}.${ou[3] || 0}`);
+    // "más de 9 córners" = 10 o más = over 9.5; "menos de 9" = 8 o menos = under 8.5.
+    if(!ou[3] || ou[3] === "0") line = over ? line + 0.5 : line - 0.5;
+    return { market, selection: over ? "over" : "under", line, consumed: ou[0] };
+  }
+  if(/ambos\s+(equipos\s+)?marcan|marcan\s+(los\s+)?dos|\bbtts\b|los\s+dos\s+equipos\s+marcan/.test(t)){
+    const no = /no\s+marcan|ambos\s+no|btts\s*:?\s*no|no\s+marcan\s+(los\s+)?dos/.test(t);
+    return { market: "btts", selection: no ? "no" : "yes", line: null, consumed: "" };
+  }
+  return null;
 }
 
-function parseNaturalBetLocally(text){
-  const oddMatch =
-    text.match(/(?:cuota(?:\s+de)?\s*[:=]?\s*|@\s*)([1-9]\d?(?:[.,]\d{1,2})?)\b/i) ||
-    text.match(/\ba\s+([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/i) ||
-    text.match(/\b([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/);
-  const odd = oddMatch ? parseFloat(oddMatch[1].replace(",", ".")) : null;
+function parseOdd(text){
+  const m = text.match(/(?:cuota(?:\s+de)?\s*[:=]?\s*|@\s*)([1-9]\d?(?:[.,]\d{1,2})?)\b/i) ||
+            text.match(/\ba\s+([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/i) ||
+            text.match(/\b([1-9](?:[.,]\d{1,2})|1[0-4](?:[.,]\d{1,2}))\b/);
+  return m ? parseFloat(m[1].replace(",", ".")) : null;
+}
 
-  const mentions = extractTeamMentions(text);
-  let teamA = mentions[0] || null, teamB = mentions[1] || null;
+function parse1x2(text, teamB){
+  const lower = norm(text);
+  const dc = lower.match(/no\s+pierde|gana\s+o\s+empata|empata\s+o\s+gana|puntua|suma\s+puntos|saca\s+algo(?:\s+positivo)?|resiste\s+sin\s+perder/);
+  if(dc) return dc.index < teamB.idx ? "home_or_draw" : "away_or_draw";
+  if(/empat/.test(lower)) return "draw";
+  const lose = lower.match(/pierde|cae\s+ante|cae\s+contra/);
+  if(lose && lose.index < teamB.idx) return "away";
+  if(/gana|vence|gano|victoria/.test(lower)) return "home";
+  return null;
+}
 
-  let selection = null;
-  const lower = text.toLowerCase();
-  if(mentions.length >= 2){
-    // Doble oportunidad ("X gana o empata", "X no pierde"): describe el
-    // resultado de UN equipo, no un empate seco -- hay que comprobarlo
-    // ANTES de la regla de empate simple, o "gana o empata" se leía
-    // como un empate normal y se perdia la mitad de la apuesta real.
-    const doubleChanceMatch = lower.match(/no\s+pierde|gana\s+o\s+empata|empata\s+o\s+gana|puntúa|puntua|suma\s+puntos|saca\s+algo(?:\s+positivo)?|resiste\s+sin\s+perder/);
-    if(doubleChanceMatch){
-      selection = doubleChanceMatch.index < teamB.idx ? "home_or_draw" : "away_or_draw";
-    } else if(/empat/.test(lower)){
-      selection = "draw";
-    } else {
-      const loseMatch = lower.match(/pierde|cae\s+ante|cae\s+contra/);
-      if(loseMatch && loseMatch.index < teamB.idx){
-        selection = "away";
-      } else if(/gana|vence|ganó|gan[oó]|victoria/.test(lower)){
-        selection = "home";
-      }
-    }
+function findMatch(names){
+  const keys = names.map(n => normalizeKey(n));
+  const has = (m, k) => [m.home_team, m.home_name].some(x => normalizeKey(x) === k) || [m.away_team, m.away_name].some(x => normalizeKey(x) === k);
+  const found = MATCHES.filter(m => keys.every(k => has(m, k)));
+  return found.length === 1 ? found[0] : null;
+}
+
+// Probabilidad "justa" del mercado: Pinnacle sin margen, si ofrece ese
+// mercado y línea (misma referencia que usa el sistema de apuestas).
+function pinnacleFair(m, market, selection, line){
+  const book = (m.odds_event?.bookmakers || []).find(b => b.key === "pinnacle");
+  if(!book) return null;
+  const ev = m.odds_event;
+  const get = (key) => (book.markets || []).find(x => x.key === key)?.outcomes || [];
+  const devig = (ps) => { const inv = ps.map(p => 1 / p), s = inv.reduce((a, b) => a + b, 0); return inv.map(x => x / s); };
+  if(market === "1x2"){
+    const o = get("h2h");
+    const price = (name) => o.find(x => x.name === name)?.price;
+    const ps = [price(ev.home_team), price("Draw"), price(ev.away_team)];
+    if(ps.some(p => !p)) return null;
+    const [h, d, a] = devig(ps);
+    return { home: h, draw: d, away: a, home_or_draw: h + d, away_or_draw: a + d }[selection];
   }
+  const key = { totals: "totals", btts: "btts", corners: "alternate_totals_corners", cards: "alternate_totals_cards" }[market];
+  const o = get(key);
+  if(market === "btts"){
+    const y = o.find(x => x.name === "Yes")?.price, n = o.find(x => x.name === "No")?.price;
+    if(!y || !n) return null;
+    const [py, pn] = devig([y, n]);
+    return selection === "yes" ? py : pn;
+  }
+  const ov = o.find(x => x.name === "Over" && x.point === line)?.price, un = o.find(x => x.name === "Under" && x.point === line)?.price;
+  if(!ov || !un) return null;
+  const [po, pu] = devig([ov, un]);
+  return selection === "over" ? po : pu;
+}
 
-  return { teamA, teamB, selection, odd };
+function modelProbability(m, market, selection, line){
+  const p = m.prediction;
+  if(market === "1x2"){
+    const s = p.sin_cuotas.probabilities;
+    return { home: s.H, draw: s.D, away: s.A, home_or_draw: s.H + s.D, away_or_draw: s.A + s.D }[selection];
+  }
+  if(market === "btts") return selection === "yes" ? p.markets.goals.btts_yes : p.markets.goals.btts_no;
+  const table = market === "totals" ? p.markets.goals : p.markets[market].total;
+  const over = table[`over_${lineKey(line)}`];
+  if(over == null) return null;
+  return selection === "over" ? over : 1 - over;
+}
+
+function describe(m, market, selection, line){
+  if(market === "1x2") return { home: `Gana ${m.home_name}`, draw: "Empate", away: `Gana ${m.away_name}`, home_or_draw: `${m.home_name} o empate`, away_or_draw: `${m.away_name} o empate` }[selection];
+  if(market === "btts") return selection === "yes" ? "Ambos marcan: Sí" : "Ambos marcan: No";
+  const noun = { totals: "goles", corners: "córners", cards: "tarjetas" }[market];
+  return `${selection === "over" ? "Más" : "Menos"} de ${line} ${noun}`;
 }
 
 async function parseNaturalBet(){
   const text = document.getElementById("betText").value.trim();
   const out = document.getElementById("betParseStatus");
+  const verdict = document.getElementById("verdict");
+  verdict.innerHTML = "";
+  if(!text){ out.className = "predict-status err"; out.textContent = "Escribe primero la apuesta."; return; }
 
-  if(!text){
-    out.className = "predict-status err";
-    out.textContent = "Escribe primero la apuesta.";
-    return;
-  }
+  const mkt = parseMarket(text);
+  const odd = parseOdd(mkt?.consumed ? text.replace(new RegExp(mkt.consumed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), " ") : text);
+  const mentions = extractTeamMentions(text);
+  let match = null, market = mkt?.market || "1x2", selection = mkt?.selection || null, line = mkt?.line ?? null;
 
-  let { teamA, teamB, selection, odd } = parseNaturalBetLocally(text);
-  let aiAmbiguous = null;
+  if(mentions.length >= 2) match = findMatch([mentions[0].officialName, mentions[1].officialName]);
+  else if(mentions.length === 1 && mkt) match = findMatch([mentions[0].officialName]);
 
-  if(!teamA || !teamB || !selection || !odd){
-    out.className = "predict-status";
-    out.textContent = "No lo he interpretado del todo con las reglas locales, probando con IA de respaldo…";
+  if(!mkt && mentions.length >= 2) selection = parse1x2(text, mentions[1]);
+
+  if(!mkt && (!match || !selection)){
+    // Respaldo con IA solo para el 1X2 (lo que sabe interpretar /api/parse-bet).
+    out.className = "predict-status"; out.innerHTML = `<span class="spinner"></span>Interpretando con IA de respaldo…`;
     try {
-      const aiRes = await fetch("/api/parse-bet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      const aiJson = await aiRes.json();
-      if(aiRes.ok && !aiJson.error){
-        if((!teamA || !teamB) && aiJson.home_team && aiJson.away_team){
-          const rA = resolveModelTeamName(aiJson.home_team);
-          const rB = resolveModelTeamName(aiJson.away_team);
-          if(rA.name && rB.name){
-            teamA = { officialName: rA.name, idx: 0 };
-            teamB = { officialName: rB.name, idx: 1 };
-          } else if(rA.ambiguous){
-            aiAmbiguous = { raw: aiJson.home_team, candidates: rA.candidates };
-          } else if(rB.ambiguous){
-            aiAmbiguous = { raw: aiJson.away_team, candidates: rB.candidates };
+      const res = await fetch("/api/parse-bet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      const ai = await res.json();
+      if(res.ok && !ai.error && ai.home_team && ai.away_team){
+        const rA = resolveModelTeamName(ai.home_team), rB = resolveModelTeamName(ai.away_team);
+        if(rA.name && rB.name){
+          match = findMatch([rA.name, rB.name]);
+          if(match && ai.selection){
+            const reversed = normalizeKey(match.home_team) !== normalizeKey(rA.name);
+            selection = reversed ? ({ home: "away", away: "home", home_or_draw: "away_or_draw", away_or_draw: "home_or_draw" }[ai.selection] || ai.selection) : ai.selection;
           }
         }
-        if(!selection && aiJson.selection) selection = aiJson.selection;
-        if(!odd && aiJson.odd) odd = aiJson.odd;
       }
-    } catch (err) {
-      console.warn("Respaldo de IA para la apuesta no disponible: " + err.message);
-    }
+    } catch (err) { console.warn("Respaldo de IA no disponible: " + err.message); }
+  } else if(!mkt && match && selection){
+    // El orden en que el usuario nombra a los equipos puede no ser el real.
+    const reversed = normalizeKey(match.home_team) !== normalizeKey(mentions[0].officialName) && normalizeKey(match.home_name) !== normalizeKey(mentions[0].officialName);
+    if(reversed) selection = { home: "away", away: "home", home_or_draw: "away_or_draw", away_or_draw: "home_or_draw" }[selection] || selection;
   }
 
-  if(!teamA || !teamB){
+  if(!match){
     out.className = "predict-status err";
-    out.textContent = aiAmbiguous
-      ? `"${aiAmbiguous.raw}" es ambiguo, podría ser: ${aiAmbiguous.candidates.join(" / ")}. Escribe el nombre completo.`
-      : "No he identificado los dos equipos. Escríbelos con el nombre habitual o su apodo.";
+    out.textContent = mentions.length
+      ? `No encuentro ese partido entre los próximos de LaLiga (${mentions.map(m => m.officialName).join(" y ")}). Elige uno de la página Partidos.`
+      : "No he identificado los equipos. Escríbelos con su nombre habitual o apodo.";
     return;
   }
-  if(!selection){
-    out.className = "predict-status err";
-    out.textContent = "No he entendido el resultado (gana / empate / pierde).";
+  if(!selection){ out.className = "predict-status err"; out.textContent = "No he entendido la apuesta (gana / empate / más de X goles / ambos marcan / córners / tarjetas)."; return; }
+
+  if(!match.prediction){
+    out.className = "predict-status"; out.innerHTML = `<span class="spinner"></span>Calculando con el modelo…`;
+    try {
+      const res = await fetch("/api/predict", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ home_team: match.home_team, away_team: match.away_team, match_date: match.kickoff.slice(0, 10), odds_event: match.odds_event }) });
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(data.error || "error del modelo");
+      match.prediction = data.data;
+    } catch (err) { out.className = "predict-status err"; out.textContent = `No se pudo consultar el modelo (${err.message}).`; return; }
+  }
+
+  const pModel = modelProbability(match, market, selection, line);
+  const pFair = pinnacleFair(match, market, selection, line);
+  const label = describe(match, market, selection, line);
+  if(pModel == null && pFair == null){
+    out.className = "predict-status err"; out.textContent = `${label}: esa línea está fuera de lo que calcula el modelo. Prueba con una línea habitual (p. ej. 2.5 goles, 9.5 córners, 4.5 tarjetas).`;
     return;
   }
-  // La cuota es opcional: si no aparece en el texto (o el usuario
-  // directamente pregunta "¿qué cuota me haría falta?"), seguimos igual
-  // -- en vez de comparar contra una cuota dada, calculamos la cuota
-  // justa (break-even) que necesitaría para tener valor. No tiene
-  // sentido bloquear aqui cuando el usuario ni siquiera esta pidiendo
-  // eso.
-  const hasOdd = !!odd;
+  const ref = pFair ?? pModel;
+  out.className = "predict-status ok";
+  out.textContent = `Interpretado: ${match.home_name} vs ${match.away_name} · ${label}${odd ? ` · cuota ${odd.toFixed(2)}` : " · sin cuota"}.`;
 
-  // Los equipos son reales, pero ¿juegan ENTRE SÍ próximamente? Si no,
-  // no tiene sentido predecir ese partido.
-  const fixture = findFixtureForTeams(teamA.officialName, teamB.officialName);
-  if(!fixture){
-    out.className = "predict-status err";
-    out.textContent = `${teamA.officialName} y ${teamB.officialName} no se enfrentan en los próximos partidos de LaLiga. Elige un partido real en la página "Partidos".`;
-    return;
+  const lines = [];
+  lines.push(`<div class="mkt"><span class="k">Modelo propio</span><span class="v">${UI.pct(pModel, 1)}</span><span class="f">cuota justa ${UI.odds(pModel ? 1 / pModel : null)}</span></div>`);
+  lines.push(`<div class="mkt"><span class="k">Mercado (Pinnacle sin margen)</span><span class="v">${pFair == null ? "—" : UI.pct(pFair, 1)}</span><span class="f">${pFair == null ? "no ofrece esta línea ahora" : `cuota justa ${UI.odds(1 / pFair)}`}</span></div>`);
+  let decision;
+  if(odd){
+    const ev = ref * odd - 1;
+    lines.push(`<div class="mkt"><span class="k">Tu cuota</span><span class="v">${odd.toFixed(2)}</span><span class="f">valor ${UI.signedPct(ev)}</span></div>`);
+    decision = ev >= 0.02
+      ? `<div class="callout info"><b>Tiene valor</b> (${UI.signedPct(ev)} de valor esperado frente ${pFair != null ? "a la cuota justa del mercado" : "al modelo propio"}). Stake sugerido abajo.</div>`
+      : ev >= 0 ? `<div class="callout"><b>Valor muy justo</b> (${UI.signedPct(ev)}): por debajo del 2% mínimo que exige el sistema.</div>`
+      : `<div class="callout warn"><b>Sin valor</b>: a esa cuota pierdes un ${UI.pct(-ev, 1)} de lo apostado a largo plazo. Necesitarías una cuota de al menos ${UI.odds(1.02 / ref)}.</div>`;
+    document.getElementById("oddInput").value = odd.toFixed(2);
+  } else {
+    decision = `<div class="callout">Para que tenga valor necesitas una cuota de al menos <b>${UI.odds(1.02 / ref)}</b> (cuota justa ${UI.odds(1 / ref)} + 2% de margen). Mira en el <a href="cuotas.html?match=${encodeURIComponent(match.match_id)}">comparador</a> qué casa la ofrece.</div>`;
+    document.getElementById("oddInput").value = (1 / ref).toFixed(2);
   }
-
-  // El orden en el que el usuario mencionó los equipos puede no
-  // coincidir con quién es local en el partido real — hay que
-  // remapear la selección (gana/empate/pierde) al local/visitante de
-  // verdad antes de llamar al modelo.
-  const fixtureHomeOfficial = resolveModelTeamName(fixture.home).name;
-  const reversed = fixtureHomeOfficial === teamB.officialName;
-  const actualHome = reversed ? teamB.officialName : teamA.officialName;
-  const actualAway = reversed ? teamA.officialName : teamB.officialName;
-  let actualSelection = selection;
-  if(reversed){
-    if(selection === "home") actualSelection = "away";
-    else if(selection === "away") actualSelection = "home";
-    else if(selection === "home_or_draw") actualSelection = "away_or_draw";
-    else if(selection === "away_or_draw") actualSelection = "home_or_draw";
-  }
-
-  const winnerLabel = selection === "draw" ? "empate"
-    : selection === "home_or_draw" ? teamA.officialName + " gana o empata (doble oportunidad)"
-    : selection === "away_or_draw" ? teamB.officialName + " gana o empata (doble oportunidad)"
-    : (selection === "home" ? teamA.officialName : teamB.officialName) + " gana";
-  const oddLabel = hasOdd ? `cuota ${odd.toFixed(2)}` : "sin cuota indicada — calculando la cuota justa";
-  out.className = "predict-status";
-  out.textContent = `Interpretado: ${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — ${oddLabel}. Consultando cuotas reales y el modelo… (puede tardar unos segundos)`;
-
-  if(hasOdd) document.getElementById("oddInput").value = odd;
-
-  await loadRealOdds(actualHome, actualAway, SPORT_KEY);
-  const marketOdds = getOddsInputs();
-
-  if(marketOdds.odds_h == null || marketOdds.odds_d == null || marketOdds.odds_a == null || ODDS_SOURCE !== "live"){
-    out.className = "predict-status err";
-    out.textContent += " Pero no hay cuotas reales de mercado para este partido todavía, así que no puedo calcular la probabilidad sola. Inténtalo más tarde.";
-    return;
-  }
-
-  const matchDate = fixture.isoDate || new Date().toISOString().slice(0, 10);
-
-  try {
-    const res = await fetch("/api/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        home_team: actualHome,
-        away_team: actualAway,
-        match_date: matchDate,
-        season: seasonFromDate(matchDate),
-        odds_h: marketOdds.odds_h,
-        odds_d: marketOdds.odds_d,
-        odds_a: marketOdds.odds_a,
-      }),
-    });
-    const json = await res.json();
-    if(!res.ok || json.ok === false) throw new Error(json.error || "Error del backend");
-
-    // Se usa el modelo "sin_cuotas" (independiente) para juzgar la
-    // apuesta — comparar la cuota del mercado contra un modelo que ya
-    // se basa en el mercado sería circular.
-    const probs = json.data.sin_cuotas.probabilities;
-    const p = actualSelection === "home" ? probs.H
-      : actualSelection === "away" ? probs.A
-      : actualSelection === "home_or_draw" ? probs.H + probs.D
-      : actualSelection === "away_or_draw" ? probs.A + probs.D
-      : probs.D;
-    const pPct = Math.round(p * 100);
-
-    document.getElementById("probInput").value = pPct;
-    out.className = "predict-status ok";
-
-    if(hasOdd){
-      out.textContent = `${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel} — cuota ${odd.toFixed(2)}. Probabilidad real del modelo independiente: ${pPct}%.`;
-    } else if(p > 0){
-      // Sin cuota que evaluar: en vez de pedirsela, calculamos la cuota
-      // justa (break-even, 1/probabilidad) -- rellenamos oddInput con
-      // ella para que el calculador de abajo arranque en el punto de
-      // equilibrio (edge 0%) hasta que el usuario meta una cuota real
-      // que haya encontrado.
-      const fairOdd = 1 / p;
-      document.getElementById("oddInput").value = fairOdd.toFixed(2);
-      out.textContent = `${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel}. Probabilidad real del modelo independiente: ${pPct}%. Para que esta apuesta tenga valor necesitarías una cuota superior a ${fairOdd.toFixed(2)}.`;
-    } else {
-      out.textContent = `${teamA.officialName} vs ${teamB.officialName} (${fixture.comp}) — ${winnerLabel}. El modelo le da una probabilidad prácticamente nula (${pPct}%) — no hay cuota real que haga esto rentable.`;
-    }
-    analyzeBet();
-  } catch (err) {
-    out.className = "predict-status err";
-    out.textContent += ` No se pudo consultar el modelo (${err.message}).`;
-  }
+  if(pFair == null) decision += `<p class="muted small">Sin cuota de Pinnacle para esta línea: la referencia es el modelo propio, que en la validación es menos preciso que el mercado — trátalo con más cautela.</p>`;
+  verdict.innerHTML = `<div class="card"><h3>${UI.esc(match.home_name)} vs ${UI.esc(match.away_name)} · ${UI.esc(label)}</h3><div class="mkt-grid">${lines.join("")}</div><div style="margin-top:14px">${decision}</div></div>`;
+  document.getElementById("probInput").value = (ref * 100).toFixed(1);
+  analyzeBet();
 }
 
 function analyzeBet(){
@@ -353,39 +321,37 @@ function analyzeBet(){
   const prob = parseFloat(document.getElementById("probInput").value) / 100;
   const bank = parseFloat(document.getElementById("bankInput").value) || 0;
   const fraction = parseFloat(document.getElementById("kellyFraction").value);
-
+  const set = (id, text, cls) => { const el = document.getElementById(id); el.textContent = text; el.className = "val" + (cls ? " " + cls : ""); };
   if(!odd || odd <= 1 || !prob || prob <= 0 || prob >= 1){
-    document.getElementById("outImplied").textContent = "—";
-    document.getElementById("outEdge").textContent = "Revisa los datos introducidos";
-    document.getElementById("outStake").textContent = "—";
-    document.getElementById("outProfit").textContent = "—";
-    return;
+    ["outImplied", "outStake", "outProfit"].forEach(id => set(id, "—")); set("outEdge", "Revisa los datos"); return;
   }
-
-  const implied = 1 / odd;
-  const edge = prob - implied;
-
-  const b = odd - 1;
-  const q = 1 - prob;
-  let kelly = (b * prob - q) / b;
-  kelly = Math.max(kelly, 0) * fraction;
-
+  const ev = prob * odd - 1;
+  const kelly = Math.min(Math.max(ev / (odd - 1), 0) * fraction, 0.025);
   const stake = bank * kelly;
-  const profit = stake * b;
-
-  document.getElementById("outImplied").textContent = (implied * 100).toFixed(1) + "%";
-
-  const edgeEl = document.getElementById("outEdge");
-  edgeEl.textContent = (edge >= 0 ? "+" : "") + (edge * 100).toFixed(1) + "%";
-  edgeEl.className = "val " + (edge > 0 ? "pos" : "neg");
-
-  document.getElementById("outStake").textContent = stake > 0 ? "€" + stake.toFixed(2) : "Sin valor — no apostar";
-  document.getElementById("outProfit").textContent = stake > 0 ? "€" + profit.toFixed(2) : "—";
+  set("outImplied", UI.pct(1 / odd, 1));
+  set("outEdge", UI.signedPct(ev), ev > 0 ? "pos" : "neg");
+  set("outStake", stake > 0 ? `${UI.money(stake)} (${(kelly * 100).toFixed(2)}% del bank)` : "Sin valor — no apostar");
+  set("outProfit", stake > 0 ? UI.money(stake * (odd - 1)) : "—");
 }
+
+document.getElementById("parseBtn").addEventListener("click", parseNaturalBet);
+document.getElementById("betText").addEventListener("keydown", (e) => { if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); parseNaturalBet(); } });
+["oddInput", "probInput", "bankInput", "kellyFraction"].forEach(id => document.getElementById(id).addEventListener("input", analyzeBet));
+document.getElementById("bankInput").value = UI.readBank();
+analyzeBet();
 
 (async () => {
   await loadModelTeams();
-  await loadRealFixtures(LEAGUE_ID, SEASON);
+  const upcoming = await loadUpcoming();
+  if(upcoming.ok && upcoming.matches.length){
+    MATCHES = upcoming.matches;
+  } else {
+    await loadAllRealOdds();
+    MATCHES = RAW_ODDS_EVENTS.map(ev => {
+      const h = resolveModelTeamName(ev.home_team)?.name || ev.home_team, a = resolveModelTeamName(ev.away_team)?.name || ev.away_team;
+      return { match_id: ev.id, kickoff: ev.commence_time, home_team: h, away_team: a, home_name: UI.teamName(h), away_name: UI.teamName(a), prediction: null, odds_event: ev };
+    });
+  }
 })();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>

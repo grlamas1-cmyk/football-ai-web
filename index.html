@@ -3,22 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Football Analytics Pro — Predicciones de LaLiga</title>
-<meta name="description" content="Predicciones de LaLiga con modelo propio, comparador de cuotas y analizador de apuestas de valor sobre la agenda real de cada jornada.">
+<title>Football Analytics Pro — Predicciones y apuestas de valor en LaLiga</title>
+<meta name="description" content="Predicciones de LaLiga con modelo propio, apuestas con valor registradas antes de cada partido y resultados auditables: ROI, aciertos y fallos a la vista.">
+<meta name="theme-color" content="#0d1310">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="canonical" href="https://football-ai-web-self.vercel.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Football Analytics Pro">
 <meta property="og:locale" content="es_ES">
-<meta property="og:title" content="Football Analytics Pro — Predicciones de LaLiga">
-<meta property="og:description" content="Predicciones de LaLiga con modelo propio, comparador de cuotas y analizador de apuestas de valor sobre la agenda real de cada jornada.">
+<meta property="og:title" content="Football Analytics Pro — Predicciones y apuestas de valor en LaLiga">
+<meta property="og:description" content="Predicciones de LaLiga con modelo propio, apuestas con valor registradas antes de cada partido y resultados auditables: ROI, aciertos y fallos a la vista.">
 <meta property="og:url" content="https://football-ai-web-self.vercel.app/">
 <meta property="og:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Football Analytics Pro — Predicciones de LaLiga">
-<meta name="twitter:description" content="Predicciones de LaLiga con modelo propio, comparador de cuotas y analizador de apuestas de valor sobre la agenda real de cada jornada.">
+<meta name="twitter:title" content="Football Analytics Pro — Predicciones y apuestas de valor en LaLiga">
+<meta name="twitter:description" content="Predicciones de LaLiga con modelo propio, apuestas con valor registradas antes de cada partido y resultados auditables: ROI, aciertos y fallos a la vista.">
 <meta name="twitter:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,65 +31,87 @@
 <header>
   <div class="header-inner">
     <a class="logo" href="index.html"><span class="mark"></span> Football Analytics Pro</a>
-    <nav>
+    <nav aria-label="Principal">
       <a href="index.html" class="active">Inicio</a>
       <a href="partidos.html">Partidos</a>
+      <a href="apuestas.html" class="highlight">Apuestas</a>
+      <a href="estadisticas.html">Resultados</a>
       <a href="cuotas.html">Cuotas</a>
-      <a href="alertas.html">Alertas</a>
       <a href="analizador.html">Analizador</a>
-      <a href="estadisticas.html">Estadísticas</a>
     </nav>
   </div>
 </header>
-
 <div class="ticker-outer">
   <div class="ticker-track" id="tickerTrack"><span><span class="spinner"></span>Cargando próximos partidos de LaLiga…</span></div>
 </div>
 
 <section class="hero">
   <div class="hero-inner">
-    <div class="eyebrow">Modelo predictivo propio · Solo LaLiga</div>
-    <h1>Predicciones de LaLiga con datos reales, partido a partido.</h1>
-    <p class="lead">Elige cualquier partido de la próxima jornada y obtén al instante su predicción, análisis con IA y mercados de goles — con las cuotas de mercado ya cargadas.</p>
-    <div class="predict-actions">
-      <a class="btn" href="partidos.html">Ver próximos partidos</a>
-      <a class="btn secondary" href="estadisticas.html">Ver clasificación</a>
+    <div class="eyebrow">Modelo propio · Solo LaLiga · Actualizado cada mañana</div>
+    <h1>Predicciones de LaLiga y apuestas con valor, <span class="accent">con resultados auditables.</span></h1>
+    <p class="lead">Cada mañana el modelo recalcula la jornada con los datos reales del último partido, busca dónde una casa paga más de lo justo y registra la recomendación <b>antes</b> de que se juegue. Acertadas y falladas, todas a la vista.</p>
+    <div class="hero-actions">
+      <a class="btn" href="apuestas.html">Ver apuestas de la jornada</a>
+      <a class="btn secondary" href="estadisticas.html">Ver resultados y validación</a>
     </div>
+    <div class="kpis" id="kpis" aria-live="polite"></div>
+  </div>
+</section>
 
-    <div class="featured-match" id="featuredMatch" style="display:none">
-      <div class="eyebrow">Próximo partido</div>
-      <div class="teams" id="featuredTeams"></div>
-      <div class="meta" id="featuredMeta"></div>
-      <div class="predict-actions">
-        <a class="btn secondary" href="#" id="featuredLink">Ver informe completo →</a>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Ahora mismo</div>
+        <h2>Apuestas con valor detectadas</h2>
       </div>
+      <a class="btn secondary" href="apuestas.html">Ver todas →</a>
     </div>
+    <div class="picks-list" id="homePicks"><p class="loading"><span class="spinner"></span>Buscando valor en las cuotas de la jornada…</p></div>
+  </div>
+</section>
 
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Próxima jornada</div>
+        <h2>Lo que dice el modelo</h2>
+      </div>
+      <a class="btn secondary" href="partidos.html">Todos los partidos →</a>
+    </div>
+    <div class="preview-grid" id="homeMatches"><p class="loading"><span class="spinner"></span>Cargando…</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow">Herramientas</div>
     <div class="home-grid">
       <a class="home-card" href="partidos.html">
         <h3>Partidos</h3>
-        <p>La agenda oficial de LaLiga. Elige un partido y obtén su predicción, análisis y mercados de goles al instante.</p>
+        <p>Informe completo de cada partido: 1X2, goles, hándicap asiático, córners, tarjetas y resultado exacto más probable.</p>
         <span class="go">Ir a Partidos →</span>
+      </a>
+      <a class="home-card" href="apuestas.html">
+        <h3>Apuestas con valor</h3>
+        <p>Dónde una casa paga más que la cuota justa, con el stake recomendado para tu bank.</p>
+        <span class="go">Ir a Apuestas →</span>
+      </a>
+      <a class="home-card" href="estadisticas.html">
+        <h3>Resultados y validación</h3>
+        <p>Cada apuesta registrada y su resultado real, el backtest 2019-2026 con cuotas reales y la precisión del modelo.</p>
+        <span class="go">Ver resultados →</span>
       </a>
       <a class="home-card" href="cuotas.html">
         <h3>Comparador de cuotas</h3>
-        <p>Compara las cuotas de varias casas para el partido que elijas y detecta oportunidades de arbitraje.</p>
+        <p>~20 casas lado a lado para 1X2, goles y hándicap, con la mejor cuota y la cuota justa de referencia.</p>
         <span class="go">Ir a Cuotas →</span>
-      </a>
-      <a class="home-card" href="alertas.html">
-        <h3>Alertas de valor</h3>
-        <p>Escanea los próximos partidos y encuentra dónde el modelo independiente ve más valor que el mercado.</p>
-        <span class="go">Ir a Alertas →</span>
       </a>
       <a class="home-card" href="analizador.html">
         <h3>Analizador de apuestas</h3>
-        <p>Escribe tu apuesta con tus propias palabras y calculamos el valor y el stake recomendado (Kelly).</p>
+        <p>Escribe tu apuesta con tus palabras ("más de 2.5 goles en el Sevilla-Alavés a 1.90") y te decimos si tiene valor.</p>
         <span class="go">Ir al Analizador →</span>
-      </a>
-      <a class="home-card" href="estadisticas.html">
-        <h3>Estadísticas</h3>
-        <p>Clasificación real de LaLiga, actualizada, con la forma reciente de cada equipo.</p>
-        <span class="go">Ir a Estadísticas →</span>
       </a>
     </div>
   </div>
@@ -100,18 +123,18 @@
     <div class="how-grid">
       <div class="how-step">
         <span class="how-num">01</span>
-        <h3>Un modelo propio, no una fórmula genérica</h3>
-        <p>XGBoost + regresión de Poisson, entrenado con partidos reales de LaLiga desde 2015. Dos versiones: una que usa las cuotas de mercado y otra que predice sin verlas, para poder comparar el modelo contra el propio mercado sin trampa.</p>
+        <h3>Un modelo propio, validado sin trampas</h3>
+        <p>Valoraciones de ataque y defensa por xG (Dixon-Coles), ELO, forma reciente y XGBoost, entrenado con 11 temporadas reales de LaLiga y Segunda. Se valida temporada a temporada prediciendo solo con datos anteriores a cada partido.</p>
       </div>
       <div class="how-step">
         <span class="how-num">02</span>
-        <h3>Solo la agenda real de la jornada</h3>
-        <p>Cada predicción está anclada a un partido que de verdad se va a jugar, con cuotas reales de varias casas de apuestas y clasificación en vivo — nunca datos de relleno.</p>
+        <h3>Valor contra la cuota justa del mercado</h3>
+        <p>La referencia es Pinnacle sin su margen, la casa más afinada. Si otra casa paga claramente más, es una apuesta con valor. El stake sale de un Kelly fraccionado (como mucho el 2,5% del bank).</p>
       </div>
       <div class="how-step">
         <span class="how-num">03</span>
-        <h3>El modelo se actualiza con cada jornada</h3>
-        <p>Tras cada resultado real, el modelo se reajusta automáticamente — no se queda congelado en los datos de entrenamiento.</p>
+        <h3>Todo queda registrado</h3>
+        <p>Cada mañana se actualizan resultados, estadísticas y predicciones. Las apuestas de las próximas 48 h se guardan con su cuota y casa, y se liquidan solas con el resultado real. Nada se borra.</p>
       </div>
     </div>
   </div>
@@ -125,13 +148,13 @@
         <div class="footer-col">
           <h4>Herramientas</h4>
           <a href="partidos.html">Partidos</a>
+          <a href="apuestas.html">Apuestas con valor</a>
           <a href="cuotas.html">Comparador de cuotas</a>
-          <a href="alertas.html">Alertas de valor</a>
           <a href="analizador.html">Analizador</a>
         </div>
         <div class="footer-col">
           <h4>Información</h4>
-          <a href="estadisticas.html">Estadísticas</a>
+          <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
         <div class="footer-col">
@@ -143,38 +166,80 @@
       </div>
     </div>
     <div class="responsible">
-      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional.
+      <b>Juego responsable.</b> Este sitio ofrece herramientas de análisis y no constituye asesoramiento financiero ni garantiza resultados. Apostar conlleva riesgo de pérdida económica: no apuestes dinero que no puedas permitirte perder. Servicio dirigido a mayores de 18 años. Si crees que tu forma de apostar te genera problemas, busca ayuda profesional (en España: <a href="https://www.jugarbien.es" rel="noopener">jugarbien.es</a>).
     </div>
   </div>
 </footer>
 
 <script src="common.js"></script>
+<script src="ui.js"></script>
 <script>
 function renderTicker(){
   const track = document.getElementById("tickerTrack");
-  if(!track) return;
   const items = DEMO_FIXTURES.length > 0
-    ? DEMO_FIXTURES.map(f => `<b>${f.home}</b> vs ${f.away} — ${f.comp} · ${f.time}`)
-    : [`Sin partidos próximos disponibles ahora mismo.`];
+    ? DEMO_FIXTURES.map(f => `<b>${UI.esc(f.home)}</b> vs ${UI.esc(f.away)} — ${UI.esc(f.time)}`)
+    : ["Sin partidos próximos disponibles ahora mismo."];
   const html = items.map(i => `<span>${i}</span>`).join("");
   track.innerHTML = html + html;
 }
 
-function renderFeaturedMatch(){
-  const first = DEMO_FIXTURES[0];
-  const box = document.getElementById("featuredMatch");
-  if(!first){ box.style.display = "none"; return; }
-  box.style.display = "block";
-  document.getElementById("featuredTeams").textContent = `${first.home} — ${first.away}`;
-  document.getElementById("featuredMeta").textContent = `${first.comp} · ${first.time}`;
-  document.getElementById("featuredLink").href =
-    `partidos.html?home=${encodeURIComponent(first.home)}&away=${encodeURIComponent(first.away)}`;
+function kpi(label, value, sub, cls = ""){
+  return `<div class="kpi"><span class="k">${label}</span><span class="v ${cls}">${value}</span><span class="s">${sub}</span></div>`;
 }
 
-loadRealFixtures(LEAGUE_ID, SEASON).then(() => {
-  renderTicker();
-  renderFeaturedMatch();
-});
+async function renderKpis(){
+  const [report, picks] = await Promise.all([loadReport(), loadPicks()]);
+  const out = [];
+  if(report.ok){
+    const pooled = report.model.pooled_complete_seasons;
+    const prev = report.model.previous_model_reference;
+    out.push(kpi("Acierto 1X2", UI.pct(pooled.accuracy, 1), `${pooled.n} partidos fuera de muestra (antes ${UI.pct(prev.accuracy, 1)})`));
+    const all = report.betting.all;
+    out.push(kpi("Backtest de apuestas", UI.signedPct(all.roi_staked), `${all.n} apuestas 2019-2026 · ${UI.units(all.profit_units, 1)}`, all.roi_staked >= 0 ? "pos" : "neg"));
+    if(all.clv_positive_share != null) out.push(kpi("Baten la cuota de cierre", UI.pct(all.clv_positive_share), `CLV medio ${UI.signedPct(all.avg_clv)}`));
+  }
+  if(picks.ok){
+    const s = picks.summary;
+    out.push(s.settled > 0
+      ? kpi("En vivo (desde nov. 2026)", UI.units(s.profit_units, 1), `${s.won} acertadas · ${s.lost} falladas · ${s.pending} pendientes`, s.profit_units >= 0 ? "pos" : "neg")
+      : kpi("En vivo", s.pending > 0 ? `${s.pending} en juego` : "Arranca ahora", "Registro público desde noviembre de 2026"));
+  }
+  document.getElementById("kpis").innerHTML = out.join("");
+}
+
+async function renderHome(){
+  const upcoming = await loadUpcoming();
+  const picksBox = document.getElementById("homePicks");
+  const matchesBox = document.getElementById("homeMatches");
+  if(!upcoming.ok || upcoming.matches.length === 0){
+    picksBox.innerHTML = `<div class="empty">Las predicciones de la jornada se preparan cada mañana. Ahora mismo no están disponibles — vuelve a intentarlo en un rato.</div>`;
+    matchesBox.innerHTML = "";
+    return;
+  }
+  const bank = UI.readBank();
+  const picks = upcoming.matches.flatMap(m => (m.prediction.picks || []).map(p => ({ p, m })))
+    .sort((a, b) => b.p.edge - a.p.edge).slice(0, 3);
+  picksBox.innerHTML = picks.length
+    ? picks.map(({ p, m }) => UI.pickCard(p, { bank, match: m })).join("")
+    : `<div class="empty">Hoy no hay ninguna cuota que pague claramente más de lo justo. Es normal: el valor aparece en pocos partidos, y no recomendar nada también es una recomendación.</div>`;
+
+  matchesBox.innerHTML = upcoming.matches.slice(0, 6).map(m => {
+    const probs = m.prediction.sin_cuotas.probabilities;
+    const nPicks = (m.prediction.picks || []).length;
+    const xg = m.prediction.sin_cuotas.expected_goals;
+    return `<a class="mini-match" href="partidos.html?match=${encodeURIComponent(m.match_id)}">
+      <div class="meta"><span>${UI.esc(UI.dateLabel(m.kickoff))}</span>${nPicks ? `<span class="pill green">${nPicks} con valor</span>` : ""}</div>
+      <div class="row">${UI.badge(m.home_team, "sm")}<span class="name">${UI.esc(m.home_name)}</span><span class="p">${UI.pct(probs.H)}</span></div>
+      <div class="row">${UI.badge(m.away_team, "sm")}<span class="name">${UI.esc(m.away_name)}</span><span class="p">${UI.pct(probs.A)}</span></div>
+      ${UI.probBar(probs, m.home_team, m.away_team, { compact: true })}
+      <div class="meta"><span>Empate ${UI.pct(probs.D)}</span><span>Goles esperados ${xg.home.toFixed(1)} – ${xg.away.toFixed(1)}</span></div>
+    </a>`;
+  }).join("");
+}
+
+loadRealFixtures().then(renderTicker);
+renderKpis();
+renderHome();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
