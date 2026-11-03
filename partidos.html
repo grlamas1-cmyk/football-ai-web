@@ -71,6 +71,7 @@
         </div>
         <div class="footer-col">
           <h4>Información</h4>
+          <a href="pronosticos">Pronósticos de la jornada</a>
           <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
@@ -283,6 +284,10 @@ function renderReport(i){
       </div>
     </div>
     <div class="report-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        ${UI.shareBar(UI.matchUrl(m.home_team, m.away_team, m.kickoff), `Pronóstico ${m.home_name} - ${m.away_name}: ${m.home_name} ${UI.pct(p.sin_cuotas.probabilities.H)} · empate ${UI.pct(p.sin_cuotas.probabilities.D)} · ${m.away_name} ${UI.pct(p.sin_cuotas.probabilities.A)}`)}
+        <a class="pill gold" href="${UI.matchUrl(m.home_team, m.away_team, m.kickoff)}">Página del pronóstico →</a>
+      </div>
       <div class="tablist" role="tablist" aria-label="Secciones del informe">
         ${tabs.map(([id, label]) => `<button role="tab" id="tab-${id}" aria-controls="panel-${id}" type="button">${label}</button>`).join("")}
       </div>

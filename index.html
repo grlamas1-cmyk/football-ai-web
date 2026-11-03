@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Football Analytics Pro — Predicciones y apuestas de valor en LaLiga</title>
-<meta name="description" content="Predicciones de LaLiga con modelo propio, apuestas con valor registradas antes de cada partido y resultados auditables: ROI, aciertos y fallos a la vista.">
+<title>Pronósticos LaLiga: predicciones y apuestas con valor | Football Analytics Pro</title>
+<meta name="description" content="Pronósticos de LaLiga con modelo propio: probabilidades, goles, córners y tarjetas de cada partido, y apuestas con valor registradas antes de jugarse con su resultado real (ROI, aciertos y fallos).">
 <meta name="theme-color" content="#0d1310">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="canonical" href="https://football-ai-web-self.vercel.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Football Analytics Pro">
 <meta property="og:locale" content="es_ES">
-<meta property="og:title" content="Football Analytics Pro — Predicciones y apuestas de valor en LaLiga">
-<meta property="og:description" content="Predicciones de LaLiga con modelo propio, apuestas con valor registradas antes de cada partido y resultados auditables: ROI, aciertos y fallos a la vista.">
+<meta property="og:title" content="Pronósticos LaLiga: predicciones y apuestas con valor | Football Analytics Pro">
+<meta property="og:description" content="Pronósticos de LaLiga con modelo propio: probabilidades, goles, córners y tarjetas de cada partido, y apuestas con valor registradas antes de jugarse con su resultado real (ROI, aciertos y fallos).">
 <meta property="og:url" content="https://football-ai-web-self.vercel.app/">
 <meta property="og:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Football Analytics Pro — Predicciones y apuestas de valor en LaLiga">
-<meta name="twitter:description" content="Predicciones de LaLiga con modelo propio, apuestas con valor registradas antes de cada partido y resultados auditables: ROI, aciertos y fallos a la vista.">
+<meta name="twitter:title" content="Pronósticos LaLiga: predicciones y apuestas con valor | Football Analytics Pro">
+<meta name="twitter:description" content="Pronósticos de LaLiga con modelo propio: probabilidades, goles, córners y tarjetas de cada partido, y apuestas con valor registradas antes de jugarse con su resultado real (ROI, aciertos y fallos).">
 <meta name="twitter:image" content="https://football-ai-web-self.vercel.app/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,8 +52,10 @@
     <p class="lead">Cada mañana el modelo recalcula la jornada con los datos reales del último partido, busca dónde una casa paga más de lo justo y registra la recomendación <b>antes</b> de que se juegue. Acertadas y falladas, todas a la vista.</p>
     <div class="hero-actions">
       <a class="btn" href="apuestas.html">Ver apuestas de la jornada</a>
-      <a class="btn secondary" href="estadisticas.html">Ver resultados y validación</a>
+      <a class="btn secondary" href="pronosticos">Pronósticos de la jornada</a>
+      <a class="btn secondary" href="estadisticas.html">Resultados y validación</a>
     </div>
+    <div id="telegramCta"></div>
     <div class="kpis" id="kpis" aria-live="polite"></div>
   </div>
 </section>
@@ -154,6 +156,7 @@
         </div>
         <div class="footer-col">
           <h4>Información</h4>
+          <a href="pronosticos">Pronósticos de la jornada</a>
           <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
@@ -216,6 +219,7 @@ async function renderHome(){
     matchesBox.innerHTML = "";
     return;
   }
+  document.getElementById("telegramCta").innerHTML = UI.telegramCta(upcoming.channels?.telegram);
   const bank = UI.readBank();
   const picks = upcoming.matches.flatMap(m => (m.prediction.picks || []).map(p => ({ p, m })))
     .sort((a, b) => b.p.edge - a.p.edge).slice(0, 3);
@@ -227,7 +231,7 @@ async function renderHome(){
     const probs = m.prediction.sin_cuotas.probabilities;
     const nPicks = (m.prediction.picks || []).length;
     const xg = m.prediction.sin_cuotas.expected_goals;
-    return `<a class="mini-match" href="partidos.html?match=${encodeURIComponent(m.match_id)}">
+    return `<a class="mini-match" href="${UI.matchUrl(m.home_team, m.away_team, m.kickoff)}">
       <div class="meta"><span>${UI.esc(UI.dateLabel(m.kickoff))}</span>${nPicks ? `<span class="pill green">${nPicks} con valor</span>` : ""}</div>
       <div class="row">${UI.badge(m.home_team, "sm")}<span class="name">${UI.esc(m.home_name)}</span><span class="p">${UI.pct(probs.H)}</span></div>
       <div class="row">${UI.badge(m.away_team, "sm")}<span class="name">${UI.esc(m.away_name)}</span><span class="p">${UI.pct(probs.A)}</span></div>

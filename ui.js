@@ -43,6 +43,12 @@ const UI = (() => {
   };
   const teamName = (key) => DISPLAY[key] || key || "";
 
+  // Enlace a la página de pronóstico del partido (la genera el servidor,
+  // ver api/pronostico.js — misma función de slug allí).
+  const slug = (text) => String(text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const matchUrl = (homeKey, awayKey, iso) => `/pronostico/${slug(teamName(homeKey))}-vs-${slug(teamName(awayKey))}-${String(iso).slice(0, 10)}`;
+
   // Colores de cada club (solo el color, como círculo con iniciales: no
   // se usan escudos ni marcas registradas).
   const TEAM_COLORS = {
@@ -109,7 +115,7 @@ const UI = (() => {
         <div><span class="k">Valor esperado</span><span class="v pos">${signedPct(pick.edge)}</span></div>
         <div><span class="k">Stake</span><span class="v">${money(stakeEur)}</span><span class="k">${(pick.stake_pct ?? 0).toFixed(2)}% del bank</span></div>
       </div>
-      <div class="pick-foot">${opinion}${pick.status ? resultChip(pick.status) : ""}</div>
+      <div class="pick-foot">${opinion}${pick.created_at ? `<span class="tag" title="Hora a la que se registró: la cuota y la casa son las de ese momento">Registrada ${esc(dateLabel(pick.created_at))}</span>` : ""}${pick.status ? resultChip(pick.status) : ""}</div>
     </article>`;
   }
 
@@ -148,6 +154,39 @@ const UI = (() => {
       <text x="${W / 2}" y="${H - 4}" text-anchor="middle">Predicho por el modelo</text>
       <text x="10" y="${H / 2}" transform="rotate(-90 10 ${H / 2})" text-anchor="middle">Frecuencia real</text>
       <text x="${sx(lo)}" y="${H - p + 18}">${pct(lo)}</text><text x="${sx(hi)}" y="${H - p + 18}" text-anchor="end">${pct(hi)}</text></svg>`;
+  }
+
+  // Compartir: enlaces directos (funcionan sin JS) + copiar enlace / menú
+  // nativo del móvil. Mismo HTML que api/_lib/site.js::shareBar.
+  function shareBar(url, text) {
+    const full = url.startsWith("http") ? url : `${location.origin}${url}`;
+    const enc = encodeURIComponent;
+    return `<div class="share-bar" data-share-url="${esc(full)}" data-share-text="${esc(text)}">
+      <span class="muted small">Compartir:</span>
+      <a class="pill" href="https://wa.me/?text=${enc(`${text} ${full}`)}" target="_blank" rel="noopener">WhatsApp</a>
+      <a class="pill" href="https://t.me/share/url?url=${enc(full)}&text=${enc(text)}" target="_blank" rel="noopener">Telegram</a>
+      <a class="pill" href="https://twitter.com/intent/tweet?text=${enc(text)}&url=${enc(full)}" target="_blank" rel="noopener">X</a>
+      <button class="pill" type="button" data-share-copy>Copiar enlace</button>
+    </div>`;
+  }
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-share-copy]");
+    if (!btn) return;
+    const bar = btn.closest(".share-bar");
+    const url = bar.dataset.shareUrl, text = bar.dataset.shareText;
+    try {
+      if (navigator.share && matchMedia("(pointer: coarse)").matches) { await navigator.share({ title: text, text, url }); return; }
+      await navigator.clipboard.writeText(url);
+      btn.textContent = "¡Copiado!";
+      setTimeout(() => { btn.textContent = "Copiar enlace"; }, 1800);
+    } catch { /* el usuario canceló el menú de compartir */ }
+  });
+
+  // Invitación al canal de Telegram (solo si el backend lo tiene
+  // configurado: el job diario publica allí las apuestas y resultados).
+  function telegramCta(url) {
+    if (!url) return "";
+    return `<div class="telegram-cta"><div><b>Recibe cada apuesta en el móvil.</b> <span class="muted">El canal de Telegram publica automáticamente cada apuesta con valor en cuanto se registra, y su resultado al terminar el partido.</span></div><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Unirme al canal</a></div>`;
   }
 
   function tabs(root) {
@@ -209,5 +248,5 @@ const UI = (() => {
 
   document.addEventListener("DOMContentLoaded", initNav);
 
-  return { esc, pct, signedPct, odds, units, money, dateLabel, teamName, badge, probBar, resultChip, pickCard, lineChart, calibrationChart, tabs, readBank, writeBank };
+  return { esc, pct, signedPct, odds, units, money, dateLabel, teamName, matchUrl, badge, probBar, resultChip, pickCard, shareBar, telegramCta, lineChart, calibrationChart, tabs, readBank, writeBank };
 })();

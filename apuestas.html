@@ -49,6 +49,7 @@
     <p class="updated" id="updatedAt"></p>
   </section>
 
+  <div id="telegramCta" style="margin-bottom:16px"></div>
   <div class="bank-box">
     <label for="bankInput">Tu bank (dinero que dedicas a apostar):</label>
     <input id="bankInput" type="number" min="10" step="10" inputmode="decimal" value="100">
@@ -114,6 +115,7 @@
         </div>
         <div class="footer-col">
           <h4>Información</h4>
+          <a href="pronosticos">Pronósticos de la jornada</a>
           <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
@@ -187,6 +189,7 @@ document.getElementById("bankInput").addEventListener("input", (e) => {
 (async () => {
   const [upcoming, picks, report] = await Promise.all([loadUpcoming(), loadPicks(), loadReport()]);
   STATE = { upcoming, picks };
+  document.getElementById("telegramCta").innerHTML = UI.telegramCta(upcoming.channels?.telegram);
   render();
   const box = document.getElementById("backtestSummary");
   if(report.ok){

@@ -1,1 +1,7 @@
-{}
+{
+  "rewrites": [
+    { "source": "/pronostico/:slug", "destination": "/api/pronostico?slug=:slug" },
+    { "source": "/pronosticos", "destination": "/api/pronosticos" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" }
+  ]
+}

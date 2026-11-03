@@ -142,6 +142,7 @@
         </div>
         <div class="footer-col">
           <h4>Información</h4>
+          <a href="pronosticos">Pronósticos de la jornada</a>
           <a href="estadisticas.html">Resultados y validación</a>
           <a href="index.html">Inicio</a>
         </div>
@@ -190,8 +191,8 @@ function renderLive(){
     : `<p class="muted">El registro en vivo empezó en noviembre de 2026: el gráfico aparecerá en cuanto haya al menos dos apuestas liquidadas. Mientras tanto, el <a href="#backtest">backtest</a> muestra cómo se habría comportado la misma regla desde 2019.</p>`;
   document.getElementById("liveBody").innerHTML = PICKS.picks.length
     ? PICKS.picks.map(p => `<tr>
-        <td>${UI.esc(UI.dateLabel(p.kickoff))}</td>
-        <td>${UI.esc(p.home_name || UI.teamName(p.home_team))} — ${UI.esc(p.away_name || UI.teamName(p.away_team))}</td>
+        <td>${UI.esc(UI.dateLabel(p.kickoff))}${p.created_at ? `<br><span class="muted small">registrada ${UI.esc(UI.dateLabel(p.created_at))}</span>` : ""}</td>
+        <td><a href="${UI.matchUrl(p.home_team, p.away_team, p.kickoff)}">${UI.esc(p.home_name || UI.teamName(p.home_team))} — ${UI.esc(p.away_name || UI.teamName(p.away_team))}</a></td>
         <td>${UI.esc(p.label)}${p.experimental ? ' <span class="tag warn">exp.</span>' : ""}</td>
         <td>${UI.esc(p.bookmaker_title)}</td>
         <td class="r">${UI.odds(p.odds)}</td>
