@@ -181,7 +181,7 @@ function renderLive(){
     kpi("Acertadas / falladas", `${s.won} / ${s.lost}`, s.settled ? `${UI.pct(s.won / s.settled)} de acierto` : "—"),
     kpi("Beneficio", UI.units(s.profit_units), `${eur(s.profit_units)} con un bank de ${UI.money(BANK)}`, tone(s.profit_units)),
     kpi("ROI", s.roi == null ? "—" : UI.signedPct(s.roi), "beneficio / dinero apostado", tone(s.roi)),
-    kpi("CLV medio", s.avg_clv == null ? "—" : UI.signedPct(s.avg_clv), "frente a la cuota justa cerca del partido", tone(s.avg_clv)),
+    kpi("CLV medio", s.avg_clv == null ? "—" : UI.signedPct(s.avg_clv), "frente a la cuota media de cierre (1X2 y goles 2.5)", tone(s.avg_clv)),
   ].join("");
   const settled = PICKS.picks.filter(p => p.status !== "pending").sort((a, b) => a.kickoff.localeCompare(b.kickoff));
   let acc = 0;
