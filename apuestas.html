@@ -43,7 +43,7 @@
 </header>
 <main class="wrap">
   <section class="page-header">
-    <div class="eyebrow">Apuestas con valor · LaLiga</div>
+    <div class="eyebrow">Apuestas con valor · LaLiga, Serie A, Premier y Bundesliga</div>
     <h1>Apuestas de la jornada</h1>
     <p class="lead">Cuotas que pagan más de lo justo, con la casa, la cuota y cuánto apostar según tu bank. Se registran automáticamente 48 horas antes de cada partido y se liquidan con el resultado real.</p>
     <p class="updated" id="updatedAt"></p>
@@ -61,9 +61,10 @@
       <div>
         <div class="eyebrow">Registradas</div>
         <h2>Próximas 48 horas</h2>
-        <p class="muted">Estas ya cuentan en el <a href="estadisticas.html#vivo">registro público</a>: la cuota y la casa son las del momento en que se detectaron.</p>
+        <p class="muted">Estas ya cuentan en el <a href="estadisticas.html#vivo">registro público</a>: la cuota y la casa son las del momento en que se detectaron. Las cuotas se revisan varias veces al día.</p>
       </div>
     </div>
+    <div class="chip-group" id="leagueFilter" style="margin-bottom:14px"></div>
     <div class="picks-list" id="officialPicks"><p class="loading"><span class="spinner"></span>Cargando…</p></div>
   </section>
 
@@ -90,7 +91,7 @@
         <h3>La regla</h3>
         <p class="muted">La <b>cuota justa</b> es la de Pinnacle quitándole su margen: es la casa con las cuotas más afinadas del mercado. Si otra casa paga al menos un <b>2% más</b> de valor esperado (y la cuota no pasa de 4.0), es una apuesta con valor. Solo una por mercado y partido.</p>
         <p class="muted">El <b>stake</b> es fijo: el 1% del bank en cada apuesta (0,5% en córners y tarjetas, experimentales). Hasta el 10/11/2026 era 1/4 de Kelly, que apuesta más cuanto más valor aparente hay; en el backtest daba menos rentabilidad, porque las apuestas con más valor aparente son justo las que peor salen.</p>
-        <p class="muted">Se recomienda la casa que más paga, opere o no en España. Debajo de cada apuesta aparece la mejor alternativa en una casa que sí opera en España, y si ahí sigue habiendo valor.</p>
+        <p class="muted">Se recomienda la casa que más paga, opere o no en España. Debajo de cada apuesta aparece la mejor alternativa en una casa que sí opera en España, y la <b>cuota mínima</b>: si tu casa (Sportium, Luckia, la que sea) paga eso o más, la apuesta sigue teniendo valor.</p>
       </div>
       <div class="card">
         <h3>Lo que dice el backtest (2019-2026)</h3>
@@ -139,6 +140,19 @@
 <script>
 let BANK = UI.readBank();
 let STATE = { upcoming: null, picks: null };
+let LEAGUE = "";
+const leagueOf = (p) => p.league || "laliga";
+
+function renderLeagueFilter(){
+  const names = STATE.picks?.leagues || { laliga: "LaLiga" };
+  const counts = {};
+  (STATE.picks?.picks || []).filter(p => p.status === "pending" && new Date(p.kickoff).getTime() > Date.now())
+    .forEach(p => { counts[leagueOf(p)] = (counts[leagueOf(p)] || 0) + 1; });
+  const chip = (key, label) => `<button type="button" class="chip ${LEAGUE === key ? "active" : ""}" data-league="${key}"><span class="dot"></span>${UI.esc(label)}${key && counts[key] ? ` · ${counts[key]}` : ""}</button>`;
+  const box = document.getElementById("leagueFilter");
+  box.innerHTML = chip("", "Todas") + Object.entries(names).map(([k, v]) => chip(k, v)).join("");
+  box.querySelectorAll("[data-league]").forEach(b => b.addEventListener("click", () => { LEAGUE = b.dataset.league; render(); }));
+}
 
 function render(){
   const { upcoming, picks } = STATE;
@@ -147,11 +161,12 @@ function render(){
   const now = Date.now();
 
   if(picks?.ok){
-    const pending = picks.picks.filter(p => p.status === "pending" && new Date(p.kickoff).getTime() > now)
+    renderLeagueFilter();
+    const pending = picks.picks.filter(p => p.status === "pending" && new Date(p.kickoff).getTime() > now && (!LEAGUE || leagueOf(p) === LEAGUE))
       .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
     official.innerHTML = pending.length
       ? pending.map(p => UI.pickCard(p, { bank: BANK })).join("")
-      : `<div class="empty">No hay apuestas registradas para las próximas 48 horas. Se revisa cada mañana: aparecen aquí cuando una casa paga claramente más de lo justo.</div>`;
+      : `<div class="empty">No hay apuestas registradas para las próximas 48 horas${LEAGUE ? " en esta liga" : ""}. Se revisa varias veces al día: aparecen aquí cuando una casa paga claramente más de lo justo.</div>`;
   } else {
     official.innerHTML = `<div class="empty">El registro de apuestas no está disponible ahora mismo.</div>`;
   }

@@ -83,9 +83,14 @@
     <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Temporada</th><th class="r">Apuestas</th><th class="r">Acierto</th><th class="r">Apostado</th><th class="r">Beneficio</th><th class="r">ROI</th><th class="r">CLV medio</th></tr></thead><tbody id="btSeasons"></tbody></table></div>
     <div class="callout" style="margin-top:16px" id="btHonest"></div>
     <div class="callout" style="margin-top:12px" id="btSpain" hidden></div>
+    <div id="btLeagues" hidden style="margin-top:24px">
+      <h3>La misma regla en otras ligas</h3>
+      <p class="muted">Desde noviembre de 2026 también se buscan apuestas con valor en Serie A, Premier League y Bundesliga, con la misma regla pero solo en 1X2 y goles, y sin modelo propio (no hace falta para la regla). Así le habría ido de 2019 a 2026 con las cuotas reales:</p>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Liga</th><th class="r">Apuestas</th><th class="r">Beneficio</th><th class="r">ROI</th><th class="r">Validación</th><th class="r">Test</th><th class="r">CLV medio</th></tr></thead><tbody id="btLeaguesBody"></tbody></table></div>
+    </div>
     <div class="filters">
       <div class="field"><label for="fSeason">Temporada</label><select id="fSeason"><option value="">Todas</option></select></div>
-      <div class="field"><label for="fMarket">Mercado</label><select id="fMarket"><option value="">Todos</option><option value="1x2">Resultado (1X2)</option><option value="totals">Goles más/menos 2.5</option></select></div>
+      <div class="field"><label for="fMarket">Mercado</label><select id="fMarket"><option value="">Todos</option><option value="1x2">Resultado (1X2)</option><option value="totals">Goles más/menos 2.5</option><option value="ah">Hándicap asiático</option></select></div>
       <div class="field"><label for="fResult">Resultado</label><select id="fResult"><option value="">Todos</option><option value="won">Acertadas</option><option value="lost">Falladas</option></select></div>
       <span class="updated" id="fCount"></span>
     </div>
@@ -189,6 +194,10 @@ function renderLive(){
   document.getElementById("liveRule").innerHTML = PICKS.rule_since && since
     ? `Desde el ${UI.esc(UI.dateLabel(PICKS.rule_since, false))} el stake es fijo (1% del bank); antes era 1/4 de Kelly. Con la regla nueva: ${since.total} apuestas, ${since.settled} liquidadas${since.settled ? `, ${UI.units(since.profit_units)}, ROI ${since.roi == null ? "—" : UI.signedPct(since.roi)}` : ""}.`
     : "";
+  const byLeague = Object.entries(PICKS.summary_by_league || {}).filter(([, x]) => x.total > 0);
+  if (byLeague.length > 1) {
+    document.getElementById("liveRule").innerHTML += ` Por liga: ${byLeague.map(([k, x]) => `${UI.esc(PICKS.leagues?.[k] || k)} ${x.total} (${x.settled ? `${UI.units(x.profit_units)}` : "sin liquidar"})`).join(" · ")}.`;
+  }
   const settled = PICKS.picks.filter(p => p.status !== "pending").sort((a, b) => a.kickoff.localeCompare(b.kickoff));
   let acc = 0;
   const series = settled.map(p => ({ x: UI.dateLabel(p.kickoff, false), y: (acc += p.profit_units || 0) }));
@@ -198,7 +207,9 @@ function renderLive(){
   document.getElementById("liveBody").innerHTML = PICKS.picks.length
     ? PICKS.picks.map(p => `<tr>
         <td>${UI.esc(UI.dateLabel(p.kickoff))}${p.created_at ? `<br><span class="muted small">registrada ${UI.esc(UI.dateLabel(p.created_at))}</span>` : ""}</td>
-        <td><a href="${UI.matchUrl(p.home_team, p.away_team, p.kickoff)}">${UI.esc(p.home_name || UI.teamName(p.home_team))} — ${UI.esc(p.away_name || UI.teamName(p.away_team))}</a></td>
+        <td>${(p.league || "laliga") === "laliga"
+          ? `<a href="${UI.matchUrl(p.home_team, p.away_team, p.kickoff)}">${UI.esc(p.home_name || UI.teamName(p.home_team))} — ${UI.esc(p.away_name || UI.teamName(p.away_team))}</a>`
+          : `${UI.esc(p.home_name)} — ${UI.esc(p.away_name)} <span class="tag">${UI.esc(p.league_name || p.league)}</span>`}</td>
         <td>${UI.esc(p.label)}${p.experimental ? ' <span class="tag warn">exp.</span>' : ""}</td>
         <td>${UI.esc(p.bookmaker_title)}</td>
         <td class="r">${UI.odds(p.odds)}</td>
@@ -238,6 +249,15 @@ function renderBacktest(){
     spainBox.innerHTML = es.all.n
       ? `<b>Solo con casas españolas</b> (bet365, Bwin y William Hill, las que trae el histórico): de las ${b.all.n} apuestas, solo ${es.all.n} tenían también valor en una de ellas. A su cuota: ${UI.units(es.all.profit_units, 1)}, ROI ${UI.signedPct(es.all.roi_staked)} (validación ${es.validation.n ? UI.signedPct(es.validation.roi_staked) : "—"} · test ${es.test.n ? UI.signedPct(es.test.roi_staked) : "—"}). Son tan pocas que el resultado es casi todo suerte: lo importante es que las casas españolas rara vez pagan más que la cuota justa.`
       : `<b>Solo con casas españolas</b> (bet365, Bwin y William Hill): ninguna apuesta del histórico tenía también valor en ellas.`;
+  }
+
+  if (b.leagues && Object.keys(b.leagues).length) {
+    document.getElementById("btLeagues").hidden = false;
+    const row = (name, x, v, t) => `<tr><td>${UI.esc(name)}</td><td class="r">${x.n}</td><td class="r ${tone(x.profit_units)}">${UI.units(x.profit_units, 1)}</td>
+      <td class="r ${tone(x.roi_staked)}">${UI.signedPct(x.roi_staked)}</td><td class="r">${UI.signedPct(v.roi_staked)}</td><td class="r">${UI.signedPct(t.roi_staked)}</td>
+      <td class="r">${x.avg_clv == null ? "—" : UI.signedPct(x.avg_clv)}</td></tr>`;
+    document.getElementById("btLeaguesBody").innerHTML = row("LaLiga (con modelo, todos los mercados)", b.all, b.validation, b.test)
+      + Object.values(b.leagues).map(l => row(l.name, l.all, l.validation, l.test)).join("");
   }
 
   const seasons = [...new Set(b.bets.map(x => x.season))];

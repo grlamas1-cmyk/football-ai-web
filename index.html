@@ -47,7 +47,7 @@
 
 <section class="hero">
   <div class="hero-inner">
-    <div class="eyebrow">Modelo propio · Solo LaLiga · Actualizado cada mañana</div>
+    <div class="eyebrow">Modelo propio de LaLiga · Apuestas con valor también en Serie A, Premier y Bundesliga</div>
     <h1>Predicciones de LaLiga y apuestas con valor, <span class="accent">con resultados auditables.</span></h1>
     <p class="lead">Cada mañana el modelo recalcula la jornada con los datos reales del último partido, busca dónde una casa paga más de lo justo y registra la recomendación <b>antes</b> de que se juegue. Acertadas y falladas, todas a la vista.</p>
     <div class="hero-actions">
@@ -211,7 +211,7 @@ async function renderKpis(){
 }
 
 async function renderHome(){
-  const upcoming = await loadUpcoming();
+  const [upcoming, allPicks] = await Promise.all([loadUpcoming(), loadPicks()]);
   const picksBox = document.getElementById("homePicks");
   const matchesBox = document.getElementById("homeMatches");
   if(!upcoming.ok || upcoming.matches.length === 0){
@@ -221,7 +221,10 @@ async function renderHome(){
   }
   document.getElementById("telegramCta").innerHTML = UI.telegramCta(upcoming.channels?.telegram);
   const bank = UI.readBank();
-  const picks = upcoming.matches.flatMap(m => (m.prediction.picks || []).map(p => ({ p, m })))
+  // LaLiga (predicción completa) + apuestas ya registradas de las otras ligas.
+  const others = allPicks?.ok ? allPicks.picks.filter(p => p.league && p.league !== "laliga" && p.status === "pending"
+    && new Date(p.kickoff).getTime() > Date.now()).map(p => ({ p, m: null })) : [];
+  const picks = [...upcoming.matches.flatMap(m => (m.prediction.picks || []).map(p => ({ p, m }))), ...others]
     .sort((a, b) => b.p.edge - a.p.edge).slice(0, 3);
   picksBox.innerHTML = picks.length
     ? picks.map(({ p, m }) => UI.pickCard(p, { bank, match: m })).join("")

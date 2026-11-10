@@ -24,6 +24,10 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(`https://api.the-odds-api.com/v4/sports/soccer_spain_la_liga/events/${eventId}/odds?${params.toString()}`);
+    for (const [from, to] of [["x-requests-remaining", "X-Odds-Remaining"], ["x-requests-used", "X-Odds-Used"]]) {
+      const value = response.headers.get(from);
+      if (value) res.setHeader(to, value);
+    }
     const data = await response.json().catch(() => null);
     if (!response.ok || !data) {
       return res.status(response.status || 502).json({ ok: false, error: data?.message || `The Odds API respondió con estado ${response.status}.` });

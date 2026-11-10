@@ -86,7 +86,7 @@ export function pickCard(p) {
   return `<article class="pick-card ${p.experimental ? "experimental" : ""}">
     <div class="pick-body">
       <div class="pick-main">
-        <span class="pick-market">${esc(p.market_label || "")}${p.experimental ? " · experimental" : ""}</span>
+        <span class="pick-market">${p.league && p.league !== "laliga" ? `${esc(p.league_name || p.league)} · ` : ""}${esc(p.market_label || "")}${p.experimental ? " · experimental" : ""}</span>
         <span class="pick-label">${esc(p.label || "")}</span>
         <span class="pick-book">en <b>${esc(p.bookmaker_title || p.bookmaker || "")}</b></span>
       </div>
@@ -97,6 +97,7 @@ export function pickCard(p) {
       <div><span class="k">Valor esperado</span><span class="v pos">${signedPct(p.edge)}</span></div>
       <div><span class="k">Stake</span><span class="v">${(p.stake_pct ?? 0).toFixed(2)}% del bank</span></div>
     </div>
+    ${p.min_odds ? `<div class="pick-min">Vale en <b>cualquier casa</b> que pague <b>${odds(p.min_odds)}</b> o más. Por debajo ya no tiene valor.</div>` : ""}
     ${spainLine(p)}
     <div class="pick-foot">${registered}${p.status ? resultChip(p.status) : ""}</div>
   </article>`;

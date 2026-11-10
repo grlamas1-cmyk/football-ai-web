@@ -7,6 +7,10 @@
 // que ya usa /api/standings). Si el plan gratuito no trae árbitros, la
 // lista sale sin ellos y el modelo sigue sin árbitro (no se inventa nada).
 
+// ?competition= PD (LaLiga, por defecto), SA, PL o BL1: el job liquida con
+// el marcador final las apuestas de las otras ligas.
+const COMPETITIONS = new Set(["PD", "SA", "PL", "BL1"]);
+
 export default async function handler(req, res) {
   const token = process.env.FOOTBALL_DATA_API_KEY;
   if (!token) {
@@ -15,7 +19,8 @@ export default async function handler(req, res) {
   const day = (offset) => new Date(Date.now() + offset * 86400e3).toISOString().slice(0, 10);
   const params = new URLSearchParams({ dateFrom: day(-21), dateTo: day(10) });
   try {
-    const response = await fetch(`https://api.football-data.org/v4/competitions/PD/matches?${params}`, { headers: { "X-Auth-Token": token } });
+    const competition = COMPETITIONS.has(String(req.query.competition)) ? String(req.query.competition) : "PD";
+    const response = await fetch(`https://api.football-data.org/v4/competitions/${competition}/matches?${params}`, { headers: { "X-Auth-Token": token } });
     const data = await response.json().catch(() => null);
     if (!response.ok || !data) {
       return res.status(response.status || 502).json({ ok: false, error: data?.message || `football-data.org respondió con estado ${response.status}.` });

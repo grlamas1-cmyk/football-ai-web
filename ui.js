@@ -115,7 +115,7 @@ const UI = (() => {
       ${head}
       <div class="pick-body">
         <div class="pick-main">
-          <span class="pick-market">${esc(pick.market_label || "")}${pick.experimental ? ' · <span class="tag warn">experimental</span>' : ""}</span>
+          <span class="pick-market">${pick.league && pick.league !== "laliga" ? `<span class="tag">${esc(pick.league_name || pick.league)}</span> ` : ""}${esc(pick.market_label || "")}${pick.experimental ? ' · <span class="tag warn">experimental</span>' : ""}</span>
           <span class="pick-label">${esc(pick.label || "")}</span>
           <span class="pick-book">en <b>${esc(pick.bookmaker_title || pick.bookmaker || "")}</b></span>
         </div>
@@ -126,6 +126,7 @@ const UI = (() => {
         <div><span class="k">Valor esperado</span><span class="v pos">${signedPct(pick.edge)}</span></div>
         <div><span class="k">Stake</span><span class="v">${money(stakeEur)}</span><span class="k">${(pick.stake_pct ?? 0).toFixed(2)}% del bank</span></div>
       </div>
+      ${pick.min_odds ? `<div class="pick-min">Vale en <b>cualquier casa</b> que pague <b>${odds(pick.min_odds)}</b> o más. Por debajo ya no tiene valor.</div>` : ""}
       ${spainLine(pick)}
       <div class="pick-foot">${opinion}${pick.created_at ? `<span class="tag" title="Hora a la que se registró: la cuota y la casa son las de ese momento">Registrada ${esc(dateLabel(pick.created_at))}</span>` : ""}${pick.status ? resultChip(pick.status) : ""}</div>
     </article>`;
