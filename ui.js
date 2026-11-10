@@ -87,6 +87,17 @@ const UI = (() => {
     return `<span class="chip-result ${cls}">${label}</span>`;
   };
 
+  // Alternativa en una casa que opera en España (desde el 10/11/2026; las
+  // apuestas anteriores no tienen el dato y no enseñan nada).
+  function spainLine(pick) {
+    if (pick.spain_bookmaker === undefined) return "";
+    if (pick.spain_bookmaker === null) return `<div class="pick-spain">Ninguna casa que opere en España de las que seguimos ofrece esta apuesta.</div>`;
+    if (pick.spain_bookmaker === pick.bookmaker) return `<div class="pick-spain">Casa que opera en España.</div>`;
+    return pick.spain_value
+      ? `<div class="pick-spain">En España: <b>${esc(pick.spain_bookmaker_title)}</b> a <b>${odds(pick.spain_odds)}</b> (valor ${signedPct(pick.spain_edge)}).</div>`
+      : `<div class="pick-spain">En España, lo mejor es <b>${esc(pick.spain_bookmaker_title)}</b> a ${odds(pick.spain_odds)}: no llega al 2% de valor (${signedPct(pick.spain_edge)}).</div>`;
+  }
+
   function pickCard(pick, { bank = 100, match = null, showMatch = true } = {}) {
     const stakeEur = bank * (pick.stake_pct || 0) / 100;
     const model = num(pick.model_probability);
@@ -115,6 +126,7 @@ const UI = (() => {
         <div><span class="k">Valor esperado</span><span class="v pos">${signedPct(pick.edge)}</span></div>
         <div><span class="k">Stake</span><span class="v">${money(stakeEur)}</span><span class="k">${(pick.stake_pct ?? 0).toFixed(2)}% del bank</span></div>
       </div>
+      ${spainLine(pick)}
       <div class="pick-foot">${opinion}${pick.created_at ? `<span class="tag" title="Hora a la que se registró: la cuota y la casa son las de ese momento">Registrada ${esc(dateLabel(pick.created_at))}</span>` : ""}${pick.status ? resultChip(pick.status) : ""}</div>
     </article>`;
   }

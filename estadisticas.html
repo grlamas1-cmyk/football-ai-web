@@ -65,6 +65,7 @@
       <div class="bank-box"><label for="bankInput">Bank:</label><input id="bankInput" type="number" min="10" step="10" value="100"><span class="muted small">€</span></div>
     </div>
     <div class="kpis" id="liveKpis"></div>
+    <p class="muted small" id="liveRule" style="margin-top:10px"></p>
     <div id="liveChart" class="card" style="margin-top:16px"></div>
     <div class="data-table-wrap table-scroll"><table class="data-table"><thead><tr><th>Fecha</th><th>Partido</th><th>Apuesta</th><th>Casa</th><th class="r">Cuota</th><th class="r">Stake</th><th>Resultado</th><th class="r">Beneficio</th></tr></thead><tbody id="liveBody"><tr><td colspan="8" class="loading"><span class="spinner"></span>Cargando…</td></tr></tbody></table></div>
   </section>
@@ -81,6 +82,7 @@
     <div class="card" style="margin-top:16px"><h3>Beneficio acumulado (unidades: 1 u = 1% del bank)</h3><div id="btChart"></div></div>
     <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Temporada</th><th class="r">Apuestas</th><th class="r">Acierto</th><th class="r">Apostado</th><th class="r">Beneficio</th><th class="r">ROI</th><th class="r">CLV medio</th></tr></thead><tbody id="btSeasons"></tbody></table></div>
     <div class="callout" style="margin-top:16px" id="btHonest"></div>
+    <div class="callout" style="margin-top:12px" id="btSpain" hidden></div>
     <div class="filters">
       <div class="field"><label for="fSeason">Temporada</label><select id="fSeason"><option value="">Todas</option></select></div>
       <div class="field"><label for="fMarket">Mercado</label><select id="fMarket"><option value="">Todos</option><option value="1x2">Resultado (1X2)</option><option value="totals">Goles más/menos 2.5</option></select></div>
@@ -183,6 +185,10 @@ function renderLive(){
     kpi("ROI", s.roi == null ? "—" : UI.signedPct(s.roi), "beneficio / dinero apostado", tone(s.roi)),
     kpi("CLV medio", s.avg_clv == null ? "—" : UI.signedPct(s.avg_clv), "frente a la cuota media de cierre (1X2 y goles 2.5)", tone(s.avg_clv)),
   ].join("");
+  const since = PICKS.summary_since_rule;
+  document.getElementById("liveRule").innerHTML = PICKS.rule_since && since
+    ? `Desde el ${UI.esc(UI.dateLabel(PICKS.rule_since, false))} el stake es fijo (1% del bank); antes era 1/4 de Kelly. Con la regla nueva: ${since.total} apuestas, ${since.settled} liquidadas${since.settled ? `, ${UI.units(since.profit_units)}, ROI ${since.roi == null ? "—" : UI.signedPct(since.roi)}` : ""}.`
+    : "";
   const settled = PICKS.picks.filter(p => p.status !== "pending").sort((a, b) => a.kickoff.localeCompare(b.kickoff));
   let acc = 0;
   const series = settled.map(p => ({ x: UI.dateLabel(p.kickoff, false), y: (acc += p.profit_units || 0) }));
@@ -224,6 +230,15 @@ function renderBacktest(){
   const se = b.all.roi_flat_se;
   const word = (r) => (r > 0.02 ? "positivo" : r < -0.02 ? "negativo" : "prácticamente plano");
   document.getElementById("btHonest").innerHTML = `<b>Lectura honesta:</b> el resultado es ${word(b.all.roi_staked)} en el conjunto (${UI.signedPct(b.all.roi_staked)}), ${word(b.validation.roi_staked)} en el tramo con el que se eligió la regla (${UI.signedPct(b.validation.roi_staked)}) y ${word(b.test.roi_staked)} en el tramo de comprobación (${UI.signedPct(b.test.roi_staked)}). Con estas muestras el margen de error del ROI es de ±${(se * 200).toFixed(0)} puntos, así que <b>no está demostrado que gane dinero a largo plazo</b>. Lo que sí se repite es que el ${UI.pct(b.all.clv_positive_share)} de las apuestas consigue mejor cuota que la justa de cierre (CLV medio ${UI.signedPct(b.all.avg_clv)}), que es lo que caracteriza a las estrategias con ventaja real.`;
+
+  const es = b.spain_only;
+  const spainBox = document.getElementById("btSpain");
+  if (es && es.all) {
+    spainBox.hidden = false;
+    spainBox.innerHTML = es.all.n
+      ? `<b>Solo con casas españolas</b> (bet365, Bwin y William Hill, las que trae el histórico): de las ${b.all.n} apuestas, solo ${es.all.n} tenían también valor en una de ellas. A su cuota: ${UI.units(es.all.profit_units, 1)}, ROI ${UI.signedPct(es.all.roi_staked)} (validación ${es.validation.n ? UI.signedPct(es.validation.roi_staked) : "—"} · test ${es.test.n ? UI.signedPct(es.test.roi_staked) : "—"}). Son tan pocas que el resultado es casi todo suerte: lo importante es que las casas españolas rara vez pagan más que la cuota justa.`
+      : `<b>Solo con casas españolas</b> (bet365, Bwin y William Hill): ninguna apuesta del histórico tenía también valor en ellas.`;
+  }
 
   const seasons = [...new Set(b.bets.map(x => x.season))];
   document.getElementById("fSeason").innerHTML = `<option value="">Todas</option>` + seasons.map(s => `<option>${s}</option>`).join("");

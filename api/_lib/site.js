@@ -71,6 +71,16 @@ export function shareBar(url, text) {
 const STATUS = { won: ["Acertada", "won"], lost: ["Fallada", "lost"], push: ["Devuelta", "push"], pending: ["Pendiente", "pending"] };
 export const resultChip = (s) => `<span class="chip-result ${(STATUS[s] || STATUS.pending)[1]}">${(STATUS[s] || [s])[0]}</span>`;
 
+// Copia de spainLine() de ui.js.
+function spainLine(p) {
+  if (p.spain_bookmaker === undefined) return "";
+  if (p.spain_bookmaker === null) return `<div class="pick-spain">Ninguna casa que opere en España de las que seguimos ofrece esta apuesta.</div>`;
+  if (p.spain_bookmaker === p.bookmaker) return `<div class="pick-spain">Casa que opera en España.</div>`;
+  return p.spain_value
+    ? `<div class="pick-spain">En España: <b>${esc(p.spain_bookmaker_title)}</b> a <b>${odds(p.spain_odds)}</b> (valor ${signedPct(p.spain_edge)}).</div>`
+    : `<div class="pick-spain">En España, lo mejor es <b>${esc(p.spain_bookmaker_title)}</b> a ${odds(p.spain_odds)}: no llega al 2% de valor (${signedPct(p.spain_edge)}).</div>`;
+}
+
 export function pickCard(p) {
   const registered = p.created_at ? `<span class="tag">Registrada ${esc(dateLong(p.created_at))}</span>` : "";
   return `<article class="pick-card ${p.experimental ? "experimental" : ""}">
@@ -87,6 +97,7 @@ export function pickCard(p) {
       <div><span class="k">Valor esperado</span><span class="v pos">${signedPct(p.edge)}</span></div>
       <div><span class="k">Stake</span><span class="v">${(p.stake_pct ?? 0).toFixed(2)}% del bank</span></div>
     </div>
+    ${spainLine(p)}
     <div class="pick-foot">${registered}${p.status ? resultChip(p.status) : ""}</div>
   </article>`;
 }

@@ -94,7 +94,7 @@ function upcomingPage(m, url) {
   ];
 
   const pickHtml = (p.picks || []).length
-    ? `<div class="picks-list">${p.picks.map(pickCard).join("")}</div><p class="muted small" style="margin-top:10px">Cuota justa = Pinnacle sin margen. Stake = 1/4 de Kelly. <a href="/apuestas.html">Calcula el stake en euros con tu bank →</a></p>`
+    ? `<div class="picks-list">${p.picks.map(pickCard).join("")}</div><p class="muted small" style="margin-top:10px">Cuota justa = Pinnacle sin margen. Stake fijo del 1% del bank. <a href="/apuestas.html">Calcula el stake en euros con tu bank →</a></p>`
     : `<div class="empty">Ninguna casa paga ahora mismo claramente más que la cuota justa en este partido. Se revisa cada mañana: si aparece valor, se registrará y saldrá en <a href="/apuestas.html">Apuestas</a>.</div>`;
 
   const bestRow = (sel, label) => best[sel]
